@@ -1,0 +1,15 @@
+tensorflow
+fastapi
+uvicorn
+python-multipart
+pillow
+numpy
+flask
+flask-cors
+mysql-connector-python
+requests
+opencv-python
+firebase-admin
+PyJWT
+python-dotenv
+google-genai

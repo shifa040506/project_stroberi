@@ -178,6 +178,14 @@ if os.path.exists(DISEASE_MODEL_PATH):
     disease_model = load_keras_model_safe(DISEASE_MODEL_PATH)
     DISEASE_INPUT_HEIGHT = int(disease_model.input_shape[1] or 224)
     DISEASE_INPUT_WIDTH = int(disease_model.input_shape[2] or 224)
+    disease_output_count = int(disease_model.output_shape[-1])
+    if disease_output_count != len(DISEASE_CLASS_NAMES):
+        disease_model = None
+        raise RuntimeError(
+            "Model penyakit daun memiliki "
+            f"{disease_output_count} kelas, tetapi class_names_daun.json "
+            f"memuat {len(DISEASE_CLASS_NAMES)} label."
+        )
     print(f"Model Penyakit Daun berhasil dimuat! Input: {DISEASE_INPUT_WIDTH}x{DISEASE_INPUT_HEIGHT}")
 else:
     print("Info: File mobilenetv2_penyakit_daun.keras belum ditemukan di folder model/.")
@@ -193,7 +201,8 @@ latest_result = {
     "penyakit_daun": "Menunggu Gambar",
     "penyakit_confidence": 0,
     "disease_confidence": 0,
-    "model": "MobileNetV2"
+    "model": "MobileNetV2",
+    "versi_model_daun": "mobilenetv2_penyakit_daun.keras"
 }
 
 latest_sensor = {
@@ -227,26 +236,45 @@ def predict_leaf_disease(pil_img):
     if disease_model is None:
         return "Model Daun Belum Dimuat", 0.0, {}
 
-    # Praproses SAMA dengan saat pelatihan: resize INTER_AREA -> blur 3x3 -> RGB, piksel 0-255
-    bgr = cv2.cvtColor(np.asarray(pil_img.convert("RGB")), cv2.COLOR_RGB2BGR)
-    bgr = cv2.resize(bgr, (DISEASE_INPUT_WIDTH, DISEASE_INPUT_HEIGHT), interpolation=cv2.INTER_AREA)
-    bgr = cv2.GaussianBlur(bgr, (3, 3), 0)
-    leaf_array = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB).astype(np.float32)[None]   # JANGAN dibagi 255
+    # Model sudah berisi Rescaling; gunakan piksel RGB 0-255 tanpa filter tambahan.
+    rgb = np.asarray(
+        pil_img.convert("RGB").resize(
+            (DISEASE_INPUT_WIDTH, DISEASE_INPUT_HEIGHT),
+            Image.Resampling.BILINEAR,
+        ),
+        dtype=np.float32,
+    )
+    leaf_array = rgb[None]
 
     with lock:
         leaf_preds = disease_model.predict(leaf_array, verbose=0)[0]
 
     order = np.argsort(leaf_preds)[::-1]
     leaf_idx = int(order[0])
-    raw_label = DISEASE_CLASS_NAMES[leaf_idx] if leaf_idx < len(DISEASE_CLASS_NAMES) else f"class_{leaf_idx}"
+
+    # Pemetaan tegas untuk dua kelas yang rentan tertukar/salah indeks.
+    DISEASE_INDEX_OVERRIDE = {
+        3: "bukan_daun",
+        8: "sehat",
+    }
+    raw_label = DISEASE_INDEX_OVERRIDE.get(
+        leaf_idx,
+        DISEASE_CLASS_NAMES[leaf_idx]
+        if leaf_idx < len(DISEASE_CLASS_NAMES)
+        else f"class_{leaf_idx}",
+    )
     leaf_conf = round(float(leaf_preds[leaf_idx]) * 100, 2)
     margin = float(leaf_preds[order[0]] - leaf_preds[order[1]]) * 100
 
-    # penolakan sederhana: kurang yakin atau dua kelas hampir sama kuat
-    if leaf_conf < 60.0 or margin < 15.0:
+    # Jangan ubah nama sehat/bukan-daun menjadi teks lain.
+    if raw_label in ("sehat", "bukan_daun"):
+        clean_label = raw_label
+        if leaf_conf < 55.0 or margin < 10.0:
+            clean_label = "Tidak yakin"
+    elif leaf_conf < 60.0 or margin < 15.0:
         clean_label = "Tidak yakin"
     else:
-        clean_label = raw_label.replace("_", " ").title()
+        clean_label = raw_label
 
     probs = {
         DISEASE_CLASS_NAMES[i]: round(float(leaf_preds[i]) * 100, 2)
@@ -381,6 +409,7 @@ def predict():
             "status": "success",
             "waktu": waktu_sekarang,
             "model": "MobileNetV2",
+            "versi_model_daun": "mobilenetv2_penyakit_daun.keras",
             "kelas": predicted_class,
             "confidence": confidence,
             "confidence_percent": round(confidence * 100, 2),
@@ -460,6 +489,8 @@ def predict_disease_mobile():
 
         return jsonify({
             "status": "success",
+            "model": "MobileNetV2",
+            "versi_model": "mobilenetv2_penyakit_daun.keras",
             "penyakit_daun": leaf_status,
             "confidence": leaf_conf,
             "probabilities": leaf_probs

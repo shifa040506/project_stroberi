@@ -1,785 +1,144 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pantau Kebun Stroberi</title>
-
-  <!-- Google Fonts: Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet">
-
-  <!-- Tailwind CSS CDN -->
+  <title>Web Admin - Pembuatan Akun User Mobile</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #F8FAFC;
-      color: #1E293B;
-      -webkit-font-smoothing: antialiased;
-    }
-  </style>
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <nav class="bg-rose-700 text-white px-6 py-4 flex justify-between items-center shadow">
+    <h1 class="font-bold text-lg">Admin Stroberi — Manajemen Akun Mobile</h1>
+    <div class="space-x-3 text-sm font-medium">
+      <a href="/" class="underline">Buat Akun User</a>
+      <a href="/roi-lab" class="bg-white text-rose-700 px-3 py-1.5 rounded hover:bg-rose-50">Lab Proses ROI &rarr;</a>
+    </div>
+  </nav>
 
-  <!-- Input File Tersembunyi -->
-  <input type="file" id="input-foto-semua" accept="image/*" class="hidden" />
-  <input type="file" id="input-foto-daun" accept="image/*" class="hidden" />
+  <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Form Buat Akun User Flutter -->
+    <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <h2 class="font-semibold text-base mb-1">Daftarkan Akun User</h2>
+      <p class="text-xs text-slate-500 mb-4">Akun langsung berstatus terverifikasi untuk login di aplikasi Flutter.</p>
 
-  <!-- Kontainer Utama -->
-  <div id="app" class="flex-1 flex flex-col"></div>
+      <form id="userForm" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium mb-1">Nama Lengkap</label>
+          <input type="text" id="nama" required class="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Contoh: Budi Santoso" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Email</label>
+          <input type="email" id="email" required class="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="budi@email.com" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Nomor HP / WhatsApp</label>
+          <input type="text" id="phone" required class="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="081234567890" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Password</label>
+          <input type="password" id="password" required class="w-full border rounded-lg px-3 py-2 text-sm"
+            placeholder="Min. 8 karakter (huruf & angka)" />
+        </div>
+        <button type="submit"
+          class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 rounded-lg text-sm">
+          + Buat Akun User
+        </button>
+      </form>
+      <p id="statusMsg" class="text-xs mt-3 font-medium"></p>
+    </section>
+
+    <!-- Daftar Akun Terdaftar -->
+    <section class="md:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-semibold text-base">Daftar Akun User Terdaftar</h2>
+        <button onclick="loadUsers()" class="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1 rounded">Muat
+          Ulang</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="border-b bg-slate-50 text-slate-600 text-xs uppercase">
+              <th class="py-2 px-3">ID</th>
+              <th class="py-2 px-3">Nama</th>
+              <th class="py-2 px-3">Email</th>
+              <th class="py-2 px-3">No. HP</th>
+              <th class="py-2 px-3">Status</th>
+              <th class="py-2 px-3 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
   <script>
-      (function () {
-        const API = {
-          predictAll: '/predict',
-          predictLeaf: '/api/predict-disease',
-          latest: '/api/latest',
-          capture: '/api/capture',
-          pollMs: 3000
-        };
-
-        const state = {
-          tab: 'utama', // 'utama' | 'riwayat'
-          connected: false,
-          loadingCapture: false,
-          loadingAll: false,
-          loadingLeaf: false,
-          lockLeaf: false,
-          notice: null,
-          noticeType: 'success',
-
-          data: {
-            waktu: 'Belum ada pemeriksaan',
-            sumber: 'Kamera Kebun',
-            fotoUrl: '',
-            // Hasil Buah
-            buahLabel: 'Belum Dicek',
-            buahKategori: 'pending', // 'matang' | 'medium' | 'mentah' | 'unknown' | 'pending'
-            buahPersen: 0,
-            buahPesan: 'Silakan ambil foto dari kamera atau pilih foto dari galeri untuk mengecek kematangan buah.',
-            // Hasil Daun
-            daunLabel: 'Belum Dicek',
-            daunStatus: 'pending', // 'sehat' | 'sakit' | 'pending'
-            daunPersen: 0,
-            daunSaran: 'Hasil pemeriksaan kesehatan daun dan saran perawatannya akan muncul di sini.',
-            // Kondisi Kebun
-            suhu: null,
-            kelembapanTanah: null,
-            kipas: 'MATI',
-            pompa: 'MATI'
-          },
-
-          riwayat: []
-        };
-
-        // Terjemahan nama penyakit ke bahasa sehari-hari yang mudah dipahami
-        function terjemahkanPenyakit(namaAsli) {
-          const raw = String(namaAsli || '').trim();
-          const lower = raw.toLowerCase();
-
-          if (!raw || raw === '-' || lower.includes('menunggu') || lower.includes('belum')) {
-            return {
-              judul: 'Belum Dicek',
-              status: 'pending',
-              saran: 'Unggah foto daun atau ambil gambar dari kamera untuk mengecek apakah daun sehat atau terkena penyakit.'
-            };
-          }
-          if (lower.includes('sehat') || lower.includes('healthy') || lower.includes('normal')) {
-            return {
-              judul: 'Daun Sehat',
-              status: 'sehat',
-              saran: 'Tanaman dalam kondisi baik. Lanjutkan penyiraman dan perawatan seperti biasa.'
-            };
-          }
-          if (lower.includes('angular')) {
-            return {
-              judul: 'Bercak Daun Bersudut',
-              status: 'sakit',
-              saran: 'Daun terkena bercak bakteri. Hindari menyiram langsung ke arah daun dan buang daun yang berbintik.'
-            };
-          }
-          if (lower.includes('powdery') && lower.includes('leaf')) {
-            return {
-              judul: 'Jamur Tepung pada Daun',
-              status: 'sakit',
-              saran: 'Terlihat lapisan putih seperti tepung. Nyalakan kipas agar udara mengalir dan pangkas daun yang berjamur.'
-            };
-          }
-          if (lower.includes('powdery') && lower.includes('fruit')) {
-            return {
-              judul: 'Jamur Tepung pada Buah',
-              status: 'sakit',
-              saran: 'Buah terkena jamur putih. Pisahkan buah yang berjamur agar tidak menular ke buah lainnya.'
-            };
-          }
-          if (lower.includes('gray_mold') || lower.includes('gray mold')) {
-            return {
-              judul: 'Busuk Abu-Abu',
-              status: 'sakit',
-              saran: 'Disebabkan udara terlalu lembap. Segera buang bagian yang membusuk dan kurangi kelembapan sekitar tanaman.'
-            };
-          }
-          if (lower.includes('leaf_spot') || lower.includes('leaf spot')) {
-            return {
-              judul: 'Bercak Daun Cokelat',
-              status: 'sakit',
-              saran: 'Petik daun yang memiliki bintik cokelat/ungu agar tidak menyebar ke daun muda.'
-            };
-          }
-          if (lower.includes('anthracnose')) {
-            return {
-              judul: 'Busuk Antraknosa',
-              status: 'sakit',
-              saran: 'Terdapat bercak cekung gelap. Jauhkan tanaman yang sakit dan hindari percikan air antar pot.'
-            };
-          }
-          if (lower.includes('blossom')) {
-            return {
-              judul: 'Hawar Bunga',
-              status: 'sakit',
-              saran: 'Bunga tampak layu kecokelatan. Bersihkan bunga yang kering agar tidak mengganggu pertumbuhan buah.'
-            };
-          }
-
-          return {
-            judul: raw.replace(/_/g, ' '),
-            status: 'sakit',
-            saran: 'Terindikasi gangguan pada tanaman. Periksa kondisi daun dan atur sirkulasi udara serta penyiraman.'
-          };
-        }
-
-        // Terjemahan status buah ke bahasa sehari-hari
-        function terjemahkanBuah(kelasAsli, persen) {
-          const raw = String(kelasAsli || '').trim();
-          const upper = raw.toUpperCase();
-
-          if (!raw || raw === '-' || upper.includes('MENUNGGU') || upper.includes('KHUSUS DAUN')) {
-            return {
-              judul: upper.includes('KHUSUS DAUN') ? 'Tidak Dicek (Mode Daun)' : 'Belum Dicek',
-              kategori: 'pending',
-              pesan: 'Gunakan tombol "Cek Buah & Daun" untuk melihat tingkat kematangan buah stroberi.'
-            };
-          }
-          if (upper.includes('TIDAK DIKETAHUI') || upper.includes('UNKNOWN')) {
-            return {
-              judul: 'Buah Tidak Terlihat',
-              kategori: 'unknown',
-              pesan: 'Kamera tidak menemukan buah stroberi pada foto ini (kemungkinan foto hanya berisi daun).'
-            };
-          }
-          if (upper.includes('MATANG') && !upper.includes('SETENGAH')) {
-            return {
-              judul: 'Sudah Matang (Siap Panen)',
-              kategori: 'matang',
-              pesan: 'Warna merah sudah merata. Buah stroberi sudah manis dan siap dipetik.'
-            };
-          }
-          if (upper.includes('MEDIUM') || upper.includes('SETENGAH')) {
-            return {
-              judul: 'Setengah Matang',
-              kategori: 'medium',
-              pesan: 'Buah mulai memerah. Tunggu sekitar 2–3 hari lagi agar matang sempurna.'
-            };
-          }
-          if (upper.includes('MENTAH')) {
-            return {
-              judul: 'Masih Mentah',
-              kategori: 'mentah',
-              pesan: 'Buah masih hijau/putih dan belum siap dipetik. Biarkan tumbuh lebih lama.'
-            };
-          }
-
-          return {
-            judul: raw,
-            kategori: 'medium',
-            pesan: `Hasil pemeriksaan menunjukkan kondisi buah: ${raw} (Keyakinan ${persen}%).`
-          };
-        }
-
-        function rapikanUrlGambar(val) {
-          if (!val || typeof val !== 'string') return '';
-          if (val.startsWith('http') || val.startsWith('data:image') || val.startsWith('/')) return val;
-          return '/' + val;
-        }
-
-        function olahDataServer(raw, sumberDefault = 'Kamera Kebun') {
-          const src = raw?.latest || raw?.result || raw || {};
-          const sensor = raw?.sensor || src?.sensor || {};
-
-          const buahPersen = Number(parseFloat(src.confidence_percent ?? src.confidence ?? 0).toFixed(0));
-          const infoBuah = terjemahkanBuah(src.kelas, buahPersen);
-
-          const daunPersen = Number(parseFloat(src.penyakit_confidence ?? src.disease_confidence ?? 0).toFixed(0));
-          const infoDaun = terjemahkanPenyakit(src.penyakit_daun);
-
-          const suhuVal = parseFloat(sensor.suhu);
-          const tanahVal = parseFloat(sensor.kelembapan_tanah);
-
-          const kipasRaw = String(sensor.kipas || '').toUpperCase();
-          const pompaRaw = String(sensor.pompa || '').toUpperCase();
-
-          return {
-            waktu: src.waktu || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-            sumber: sumberDefault,
-            fotoUrl: rapikanUrlGambar(src.image_url) || state.data.fotoUrl,
-            buahLabel: infoBuah.judul,
-            buahKategori: infoBuah.kategori,
-            buahPersen: isNaN(buahPersen) ? 0 : buahPersen,
-            buahPesan: infoBuah.pesan,
-            daunLabel: infoDaun.judul,
-            daunStatus: infoDaun.status,
-            daunPersen: isNaN(daunPersen) ? 0 : daunPersen,
-            daunSaran: infoDaun.saran,
-            suhu: !isNaN(suhuVal) && suhuVal > 0 ? suhuVal.toFixed(1) : state.data.suhu,
-            kelembapanTanah: !isNaN(tanahVal) && tanahVal > 0 ? Math.round(tanahVal) : state.data.kelembapanTanah,
-            kipas: kipasRaw.includes('ON') ? 'MENYALA' : (kipasRaw ? 'MATI' : state.data.kipas),
-            pompa: pompaRaw.includes('ON') ? 'MENYALA' : (pompaRaw ? 'MATI' : state.data.pompa)
-          };
-        }
-
-        async function ambilDataTerbaru() {
-          try {
-            const res = await fetch(API.latest, { cache: 'no-store' });
-            if (!res.ok) throw new Error();
-            const json = await res.json();
-
-            state.connected = true;
-            const hasil = olahDataServer(json, 'Kamera Kebun');
-
-            if (state.lockLeaf) {
-              hasil.daunLabel = state.data.daunLabel;
-              hasil.daunStatus = state.data.daunStatus;
-              hasil.daunPersen = state.data.daunPersen;
-              hasil.daunSaran = state.data.daunSaran;
-            }
-
-            state.data = hasil;
-
-            if (hasil.buahKategori !== 'pending') {
-              const sudahAda = state.riwayat.some(r => r.waktu === hasil.waktu && r.buahLabel === hasil.buahLabel);
-              if (!sudahAda) {
-                state.riwayat.unshift({ ...hasil });
-                if (state.riwayat.length > 30) state.riwayat.pop();
-              }
-            }
-            render();
-          } catch {
-            state.connected = false;
-            render();
-          }
-        }
-
-        async function fotoDariKamera() {
-          if (state.loadingCapture) return;
-          state.loadingCapture = true;
-          state.lockLeaf = false;
-          tampilkanPesan('Meminta kamera kebun mengambil foto terbaru...', 'info');
-          render();
-
-          try {
-            let res = await fetch(API.capture, { method: 'POST' });
-            if (res.status === 405) res = await fetch(API.capture);
-            if (!res.ok) throw new Error('Kamera kebun belum merespons');
-
-            tampilkanPesan('Foto berhasil diambil! Sedang memeriksa kondisi tanaman...', 'success');
-            setTimeout(ambilDataTerbaru, 1200);
-          } catch (err) {
-            tampilkanPesan('Kamera kebun belum terhubung. Anda tetap bisa mengecek lewat tombol Pilih Foto.', 'error');
-          } finally {
-            state.loadingCapture = false;
-            render();
-          }
-        }
-
-        async function kirimFotoSemua(file) {
-          if (!file || state.loadingAll) return;
-          state.loadingAll = true;
-          state.lockLeaf = false;
-          const preview = URL.createObjectURL(file);
-          state.data.fotoUrl = preview;
-          tampilkanPesan('Sedang memeriksa buah dan daun dari foto Anda...', 'info');
-          render();
-
-          try {
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('image', file);
-
-            const res = await fetch(API.predictAll, { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Gagal memproses foto');
-            const json = await res.json();
-
-            state.connected = true;
-            const hasil = olahDataServer(json, 'Foto Galeri');
-            if (!hasil.fotoUrl) hasil.fotoUrl = preview;
-
-            state.data = hasil;
-            state.riwayat.unshift({ ...hasil });
-            if (state.riwayat.length > 30) state.riwayat.pop();
-
-            tampilkanPesan(`Pemeriksaan selesai! Buah: ${hasil.buahLabel} · Daun: ${hasil.daunLabel}`, 'success');
-          } catch {
-            tampilkanPesan('Gagal memeriksa foto. Pastikan program server Python sedang berjalan.', 'error');
-          } finally {
-            state.loadingAll = false;
-            render();
-          }
-        }
-
-        async function kirimFotoDaunSaja(file) {
-          if (!file || state.loadingLeaf) return;
-          state.loadingLeaf = true;
-          const preview = URL.createObjectURL(file);
-          state.data.fotoUrl = preview;
-          tampilkanPesan('Sedang mengecek kesehatan daun dari foto Anda...', 'info');
-          render();
-
-          try {
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('image', file);
-
-            const res = await fetch(API.predictLeaf, { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Gagal memproses foto daun');
-            const json = await res.json();
-
-            state.connected = true;
-            state.lockLeaf = true;
-
-            const persen = Number(parseFloat(json.confidence || 0).toFixed(0));
-            const infoDaun = terjemahkanPenyakit(json.penyakit_daun);
-
-            state.data = {
-              ...state.data,
-              waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-              sumber: 'Foto Daun',
-              fotoUrl: preview,
-              buahLabel: 'Tidak Dicek (Mode Daun)',
-              buahKategori: 'pending',
-              buahPersen: 0,
-              buahPesan: 'Anda memilih mode cek daun saja. Gunakan tombol "Cek Buah & Daun" untuk mengecek buah.',
-              daunLabel: infoDaun.judul,
-              daunStatus: infoDaun.status,
-              daunPersen: persen,
-              daunSaran: infoDaun.saran
-            };
-
-            state.riwayat.unshift({ ...state.data });
-            if (state.riwayat.length > 30) state.riwayat.pop();
-
-            tampilkanPesan(`Hasil cek daun: ${infoDaun.judul} (Keyakinan ${persen}%)`, 'success');
-          } catch {
-            tampilkanPesan('Gagal memeriksa foto daun. Pastikan program server Python sedang berjalan.', 'error');
-          } finally {
-            state.loadingLeaf = false;
-            render();
-          }
-        }
-
-        function tampilkanPesan(teks, tipe = 'success') {
-          state.notice = teks;
-          state.noticeType = tipe;
-          render();
-          if (state.timer) clearTimeout(state.timer);
-          state.timer = setTimeout(() => {
-            state.notice = null;
-            render();
-          }, 5000);
-        }
-
-        function unduhLaporan() {
-          if (state.riwayat.length === 0) {
-            tampilkanPesan('Belum ada catatan riwayat yang bisa diunduh.', 'info');
-            return;
-          }
-          const header = ['Waktu', 'Kondisi Buah', 'Keyakinan Buah (%)', 'Kondisi Daun', 'Keyakinan Daun (%)', 'Suhu (C)', 'Kelembapan Tanah (%)'];
-          const baris = state.riwayat.map(r => [
-            `"${r.waktu}"`,
-            `"${r.buahLabel}"`,
-            r.buahPersen,
-            `"${r.daunLabel}"`,
-            r.daunPersen,
-            r.suhu ?? '-',
-            r.kelembapanTanah ?? '-'
-          ].join(','));
-
-          const csv = 'data:text/csv;charset=utf-8,' + [header.join(','), ...baris].join('\n');
-          const a = document.createElement('a');
-          a.href = encodeURI(csv);
-          a.download = `Catatan_Kebun_Stroberi_${new Date().toISOString().slice(0, 10)}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          tampilkanPesan('Catatan riwayat berhasil diunduh.', 'success');
-        }
-
-        function render() {
-          const app = document.getElementById('app');
-          if (!app) return;
-          const D = state.data;
-
-          // Warna Kartu Buah
-          const gayaBuah = {
-            matang: { box: 'bg-rose-50 border-rose-200', badge: 'bg-rose-600 text-white', teks: 'text-rose-700', ikon: 'check-circle-2' },
-            medium: { box: 'bg-amber-50 border-amber-200', badge: 'bg-amber-500 text-white', teks: 'text-amber-800', ikon: 'clock' },
-            mentah: { box: 'bg-emerald-50 border-emerald-200', badge: 'bg-emerald-600 text-white', teks: 'text-emerald-800', ikon: 'sprout' },
-            unknown: { box: 'bg-slate-100 border-slate-200', badge: 'bg-slate-500 text-white', teks: 'text-slate-700', ikon: 'help-circle' },
-            pending: { box: 'bg-slate-50 border-slate-200', badge: 'bg-slate-200 text-slate-700', teks: 'text-slate-700', ikon: 'apple' }
-          }[D.buahKategori];
-
-          // Warna Kartu Daun
-          const gayaDaun = {
-            sehat: { box: 'bg-emerald-50 border-emerald-200', badge: 'bg-emerald-600 text-white', teks: 'text-emerald-800', ikon: 'shield-check' },
-            sakit: { box: 'bg-amber-50 border-amber-300', badge: 'bg-amber-600 text-white', teks: 'text-amber-900', ikon: 'alert-triangle' },
-            pending: { box: 'bg-slate-50 border-slate-200', badge: 'bg-slate-200 text-slate-700', teks: 'text-slate-700', ikon: 'leaf' }
-          }[D.daunStatus];
-
-          app.innerHTML = `
-                    <!-- HEADER SEDERHANA -->
-                    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-                        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-sm">
-                                    <i data-lucide="sprout" class="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <h1 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Pantau Kebun Stroberi</h1>
-                                    <p class="text-xs text-slate-500">Cek Kematangan Buah & Kesehatan Daun</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                <!-- Status Koneksi -->
-                                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${state.connected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                                    <span class="w-2 h-2 rounded-full ${state.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
-                                    <span>${state.connected ? 'Sistem Terhubung' : 'Menghubungkan...'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MENU TAB SEDERHANA (2 TAB SAJA) -->
-                        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 pb-2.5">
-                            <button id="tab-utama" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer flex items-center gap-2 ${state.tab === 'utama' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">
-                                <i data-lucide="camera" class="w-4 h-4"></i>
-                                <span>Pemeriksaan Tanaman</span>
-                            </button>
-                            <button id="tab-riwayat" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer flex items-center gap-2 ${state.tab === 'riwayat' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">
-                                <i data-lucide="history" class="w-4 h-4"></i>
-                                <span>Catatan Riwayat (${state.riwayat.length})</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    <!-- KONTEN UTAMA -->
-                    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-                        <!-- NOTIFIKASI RAMAH -->
-                        ${state.notice ? `
-                            <div class="p-4 rounded-xl border text-sm font-medium flex items-center justify-between shadow-xs ${state.noticeType === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' :
-                state.noticeType === 'info' ? 'bg-sky-50 border-sky-200 text-sky-800' :
-                  'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }">
-                                <div class="flex items-center gap-2.5">
-                                    <i data-lucide="${state.noticeType === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5 shrink-0"></i>
-                                    <span>${state.notice}</span>
-                                </div>
-                                <button id="btn-tutup-pesan" class="text-xs font-bold underline ml-4 cursor-pointer">Tutup</button>
-                            </div>
-                        ` : ''}
-
-                        ${state.tab === 'utama' ? `
-                            <!-- BAGIAN 1: FOTO & TOMBOL PEMERIKSAAN -->
-                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-                                <!-- KOTAK FOTO TANAMAN (7 KOLOM) -->
-                                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                                        <div>
-                                            <h2 class="font-bold text-slate-900 text-base">Foto Tanaman</h2>
-                                            <p class="text-xs text-slate-500">Terakhir diperbarui: ${D.waktu} (${D.sumber})</p>
-                                        </div>
-                                        <button id="btn-segarkan" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer" title="Segarkan Data">
-                                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-
-                                    <!-- Area Preview Foto -->
-                                    <div class="aspect-[16/10] bg-slate-900 flex items-center justify-center overflow-hidden relative">
-                                        ${D.fotoUrl ? `
-                                            <img src="${D.fotoUrl}" alt="Foto Tanaman Stroberi" class="w-full h-full object-contain" />
-                                        ` : `
-                                            <div class="text-center p-8 text-slate-400 max-w-sm space-y-3">
-                                                <div class="w-14 h-14 rounded-full bg-slate-800 mx-auto flex items-center justify-center text-slate-300">
-                                                    <i data-lucide="image" class="w-7 h-7"></i>
-                                                </div>
-                                                <p class="text-sm font-semibold text-slate-200">Belum Ada Foto Tanaman</p>
-                                                <p class="text-xs text-slate-400 leading-relaxed">
-                                                    Pilih salah satu tombol di bawah ini untuk mengambil foto dari kamera kebun atau mengunggah foto dari HP/laptop Anda.
-                                                </p>
-                                            </div>
-                                        `}
-                                    </div>
-
-                                    <!-- 3 TOMBOL AKSI UTAMA YANG JELAS -->
-                                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <button id="btn-kamera" ${state.loadingCapture ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="camera" class="w-4 h-4 text-rose-400"></i>
-                                            <span>${state.loadingCapture ? 'Memotret...' : 'Foto Kamera Kebun'}</span>
-                                        </button>
-
-                                        <button id="btn-pilih-semua" ${state.loadingAll ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="upload" class="w-4 h-4"></i>
-                                            <span>${state.loadingAll ? 'Memeriksa...' : 'Cek Buah & Daun'}</span>
-                                        </button>
-
-                                        <button id="btn-pilih-daun" ${state.loadingLeaf ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="leaf" class="w-4 h-4"></i>
-                                            <span>${state.loadingLeaf ? 'Memeriksa...' : 'Cek Daun Saja'}</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- HASIL PEMERIKSAAN (5 KOLOM) -->
-                                <div class="lg:col-span-5 space-y-5">
-
-                                    <!-- KARTU 1: KONDISI BUAH -->
-                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2.5">
-                                                <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                                                    <i data-lucide="cherry" class="w-5 h-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h3 class="font-bold text-slate-900 text-base">Kondisi Buah</h3>
-                                                    <p class="text-xs text-slate-500">Tingkat kematangan stroberi</p>
-                                                </div>
-                                            </div>
-                                            ${D.buahPersen > 0 ? `
-                                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${gayaBuah.badge}">
-                                                    Yakin ${D.buahPersen}%
-                                                </span>
-                                            ` : ''}
-                                        </div>
-
-                                        <div class="p-4 rounded-xl border ${gayaBuah.box}">
-                                            <div class="text-xl font-extrabold ${gayaBuah.teks}">
-                                                ${D.buahLabel}
-                                            </div>
-                                            <p class="text-sm text-slate-700 mt-1.5 leading-relaxed">
-                                                ${D.buahPesan}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <!-- KARTU 2: KESEHATAN DAUN -->
-                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2.5">
-                                                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                                                    <i data-lucide="leaf" class="w-5 h-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h3 class="font-bold text-slate-900 text-base">Kesehatan Daun</h3>
-                                                    <p class="text-xs text-slate-500">Deteksi bercak & jamur tanaman</p>
-                                                </div>
-                                            </div>
-                                            ${D.daunPersen > 0 ? `
-                                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${gayaDaun.badge}">
-                                                    Yakin ${D.daunPersen}%
-                                                </span>
-                                            ` : ''}
-                                        </div>
-
-                                        <div class="p-4 rounded-xl border ${gayaDaun.box}">
-                                            <div class="text-xl font-extrabold ${gayaDaun.teks}">
-                                                ${D.daunLabel}
-                                            </div>
-                                            <p class="text-sm text-slate-700 mt-1.5 leading-relaxed">
-                                                ${D.daunSaran}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <!-- BAGIAN 2: KONDISI KEBUN SAAT INI (SENSOR & PERALATAN) -->
-                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-                                <div class="mb-4">
-                                    <h2 class="font-bold text-slate-900 text-base">Kondisi Lingkungan Kebun Saat Ini</h2>
-                                    <p class="text-xs text-slate-500">Pantauan otomatis suhu udara, kelembapan tanah, dan peralatan penyiraman</p>
-                                </div>
-
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                                            <i data-lucide="thermometer" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Suhu Udara</span>
-                                            <span class="text-lg font-extrabold text-slate-900">${D.suhu !== null ? D.suhu + ' °C' : '-- °C'}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
-                                            <i data-lucide="droplets" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Kelembapan Tanah</span>
-                                            <span class="text-lg font-extrabold text-slate-900">${D.kelembapanTanah !== null ? D.kelembapanTanah + ' %' : '-- %'}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg ${D.kipas === 'MENYALA' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
-                                            <i data-lucide="wind" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Kipas Pendingin</span>
-                                            <span class="text-base font-extrabold ${D.kipas === 'MENYALA' ? 'text-emerald-600' : 'text-slate-600'}">${D.kipas}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg ${D.pompa === 'MENYALA' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
-                                            <i data-lucide="shower-head" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Pompa Siram</span>
-                                            <span class="text-base font-extrabold ${D.pompa === 'MENYALA' ? 'text-sky-600' : 'text-slate-600'}">${D.pompa}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : `
-                            <!-- TAB 2: CATATAN RIWAYAT PEMERIKSAAN -->
-                            <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                                <div class="p-5 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                                    <div>
-                                        <h2 class="font-bold text-slate-900 text-base">Catatan Riwayat Pemeriksaan</h2>
-                                        <p class="text-xs text-slate-500">Daftar hasil pengecekan buah dan daun sebelumnya</p>
-                                    </div>
-                                    <button id="btn-unduh-csv" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer">
-                                        <i data-lucide="download" class="w-4 h-4"></i>
-                                        <span>Simpan Laporan (Excel/CSV)</span>
-                                    </button>
-                                </div>
-
-                                ${state.riwayat.length === 0 ? `
-                                    <div class="p-12 text-center space-y-2">
-                                        <p class="text-sm font-semibold text-slate-700">Belum Ada Catatan Riwayat</p>
-                                        <p class="text-xs text-slate-500">Lakukan pemeriksaan foto terlebih dahulu di menu Pemeriksaan Tanaman.</p>
-                                    </div>
-                                ` : `
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full text-left text-sm">
-                                            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500">
-                                                <tr>
-                                                    <th class="py-3 px-4">Foto</th>
-                                                    <th class="py-3 px-4">Waktu</th>
-                                                    <th class="py-3 px-4">Kondisi Buah</th>
-                                                    <th class="py-3 px-4">Kesehatan Daun</th>
-                                                    <th class="py-3 px-4">Sumber</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100">
-                                                ${state.riwayat.map(r => `
-                                                    <tr class="hover:bg-slate-50">
-                                                        <td class="py-3 px-4">
-                                                            ${r.fotoUrl ? `<img src="${r.fotoUrl}" class="w-12 h-12 rounded-lg object-cover border border-slate-200" />` : '-'}
-                                                        </td>
-                                                        <td class="py-3 px-4 text-slate-600 text-xs">${r.waktu}</td>
-                                                        <td class="py-3 px-4 font-semibold text-slate-900">
-                                                            ${r.buahLabel}
-                                                            ${r.buahPersen > 0 ? `<span class="text-xs font-normal text-slate-500">(${r.buahPersen}%)</span>` : ''}
-                                                        </td>
-                                                        <td class="py-3 px-4">
-                                                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${r.daunStatus === 'sehat' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}">
-                                                                ${r.daunLabel} ${r.daunPersen > 0 ? `(${r.daunPersen}%)` : ''}
-                                                            </span>
-                                                        </td>
-                                                        <td class="py-3 px-4 text-xs text-slate-500">${r.sumber}</td>
-                                                    </tr>
-                                                `).join('')}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                `}
-                            </div>
-                        `}
-                    </main>
-                `;
-
-          if (window.lucide) window.lucide.createIcons();
-          pasangEvent();
-        }
-
-        function pasangEvent() {
-          document.getElementById('tab-utama').onclick = () => { state.tab = 'utama'; render(); };
-          document.getElementById('tab-riwayat').onclick = () => { state.tab = 'riwayat'; render(); };
-
-          const btnTutup = document.getElementById('btn-tutup-pesan');
-          if (btnTutup) btnTutup.onclick = () => { state.notice = null; render(); };
-
-          const btnSegarkan = document.getElementById('btn-segarkan');
-          if (btnSegarkan) btnSegarkan.onclick = () => { ambilDataTerbaru(); tampilkanPesan('Data diperbarui.', 'info'); };
-
-          const btnKamera = document.getElementById('btn-kamera');
-          if (btnKamera) btnKamera.onclick = fotoDariKamera;
-
-          const inputSemua = document.getElementById('input-foto-semua');
-          const btnSemua = document.getElementById('btn-pilih-semua');
-          if (btnSemua && inputSemua) {
-            btnSemua.onclick = () => inputSemua.click();
-            inputSemua.onchange = (e) => {
-              if (e.target.files[0]) {
-                kirimFotoSemua(e.target.files[0]);
-                e.target.value = '';
-              }
-            };
-          }
-
-          const inputDaun = document.getElementById('input-foto-daun');
-          const btnDaun = document.getElementById('btn-pilih-daun');
-          if (btnDaun && inputDaun) {
-            btnDaun.onclick = () => inputDaun.click();
-            inputDaun.onchange = (e) => {
-              if (e.target.files[0]) {
-                kirimFotoDaunSaja(e.target.files[0]);
-                e.target.value = '';
-              }
-            };
-          }
-
-          const btnUnduh = document.getElementById('btn-unduh-csv');
-          if (btnUnduh) btnUnduh.onclick = unduhLaporan;
-        }
-
-        ambilDataTerbaru();
-        setInterval(ambilDataTerbaru, API.pollMs);
-        render();
-      })();
+    async function loadUsers() {
+      const res = await fetch("/api/web/users");
+      const json = await res.json();
+      const tbody = document.getElementById("usersTableBody");
+      tbody.innerHTML = "";
+      if (!json.users || json.users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-xs text-slate-400">Belum ada akun terdaftar.</td></tr>`;
+        return;
+      }
+
+      json.users.forEach(u => {
+        const badge = u.is_verified
+          ? `<span class="px-2 py-0.5 text-xs rounded bg-emerald-100 text-emerald-700">Aktif</span>`
+          : `<span class="px-2 py-0.5 text-xs rounded bg-amber-100 text-amber-700">Belum OTP</span>`;
+
+        tbody.innerHTML += `
+          <tr>
+            <td class="py-2 px-3">${u.id}</td>
+            <td class="py-2 px-3 font-medium">${u.nama}</td>
+            <td class="py-2 px-3 text-slate-600">${u.email}</td>
+            <td class="py-2 px-3 text-slate-600">${u.phone}</td>
+            <td class="py-2 px-3">${badge}</td>
+            <td class="py-2 px-3 text-right">
+              <button onclick="deleteUser(${u.id})" class="text-xs text-red-600 hover:underline">Hapus</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("statusMsg");
+      const res = await fetch("/api/web/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nama: document.getElementById("nama").value,
+          email: document.getElementById("email").value,
+          phone: document.getElementById("phone").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        msg.className = "text-xs mt-3 font-medium text-emerald-600";
+        msg.textContent = json.message;
+        e.target.reset();
+        loadUsers();
+      } else {
+        msg.className = "text-xs mt-3 font-medium text-red-600";
+        msg.textContent = json.error || "Gagal membuat akun.";
+      }
+    });
+
+    async function deleteUser(id) {
+      if (!confirm("Hapus akun ini?")) return;
+      await fetch(`/api/web/users/${id}`, { method: "DELETE" });
+      loadUsers();
+    }
+
+    loadUsers();
   </script>
 </body>
 

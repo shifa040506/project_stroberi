@@ -92,6 +92,8 @@ DISEASE_LABELS_PATH = os.path.join(BASE_DIR, "model", "class_names_daun.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 LATEST_IMAGE = os.path.join(STATIC_DIR, "latest.jpg")
 LATEST_CROP_IMAGE = os.path.join(STATIC_DIR, "latest_crop.jpg")
+LATEST_DAUN_IMAGE = os.path.join(STATIC_DIR, "latest_daun.jpg")
+LATEST_CROP_DAUN_IMAGE = os.path.join(STATIC_DIR, "latest_crop_daun.jpg")
 
 os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -202,7 +204,9 @@ latest_result = {
     "penyakit_confidence": 0,
     "disease_confidence": 0,
     "model": "MobileNetV2",
-    "versi_model_daun": "mobilenetv2_penyakit_daun.keras"
+    "versi_model_daun": "mobilenetv2_penyakit_daun.keras",
+    "leaf_image_url": "/static/latest_daun.jpg",
+    "leaf_cropped_url": "/static/latest_crop_daun.jpg"
 }
 
 latest_sensor = {
@@ -348,6 +352,54 @@ def auto_crop_strawberry(img_bgr, min_area=500):
     return img_bgr[margin_y:img_h - margin_y, margin_x:img_w - margin_x]
 
 # =====================================================
+# FUNGSI OPENCV AUTO-CROP DAUN
+# =====================================================
+def auto_crop_leaf(img_bgr, min_area=800):
+    img_h, img_w = img_bgr.shape[:2]
+    if img_h < 20 or img_w < 20:
+        return img_bgr
+
+    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    # Pilih area hijau daun. Rentang diperluas untuk daun kuning
+    # atau kekuningan yang masih memiliki komponen hijau.
+    mask_green = cv2.inRange(hsv, np.array([25, 35, 25]), np.array([95, 255, 255]))
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    mask_green = cv2.morphologyEx(mask_green, cv2.MORPH_OPEN, kernel)
+    mask_green = cv2.morphologyEx(mask_green, cv2.MORPH_CLOSE, kernel)
+
+    contours, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    valid_contours = []
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < min_area:
+            continue
+
+        x, y, w, h = cv2.boundingRect(cnt)
+        if w >= img_w * 0.04 and h >= img_h * 0.04:
+            valid_contours.append((area, cnt))
+
+    if not valid_contours:
+        margin_x = int(img_w * 0.12)
+        margin_y = int(img_h * 0.12)
+        fallback = img_bgr[margin_y:img_h - margin_y, margin_x:img_w - margin_x]
+        return fallback if fallback.size else img_bgr
+
+    _, best_contour = max(valid_contours, key=lambda item: item[0])
+    x, y, w, h = cv2.boundingRect(best_contour)
+
+    pad_x = int(w * 0.20)
+    pad_y = int(h * 0.20)
+    x1 = max(0, x - pad_x)
+    y1 = max(0, y - pad_y)
+    x2 = min(img_w, x + w + pad_x)
+    y2 = min(img_h, y + h + pad_y)
+
+    cropped = img_bgr[y1:y2, x1:x2]
+    return cropped if cropped.size else img_bgr
+
+# =====================================================
 # RUTE FLASK (HALAMAN WEB & DETEKSI BUAH + DAUN)
 # =====================================================
 @app.route("/")
@@ -373,8 +425,13 @@ def predict():
         img.save(LATEST_IMAGE, format="JPEG", quality=95)
         raw_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-        # JALUR A: DETEKSI PENYAKIT DAUN (FULL FRAME)
-        leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img)
+        # JALUR A: DETEKSI PENYAKIT DAUN (OPENCV AUTO-CROP DAUN)
+        img.save(LATEST_DAUN_IMAGE, format="JPEG", quality=95)
+        leaf_cropped_bgr = auto_crop_leaf(raw_bgr)
+        cv2.imwrite(LATEST_CROP_DAUN_IMAGE, leaf_cropped_bgr)
+        leaf_crop_rgb = cv2.cvtColor(leaf_cropped_bgr, cv2.COLOR_BGR2RGB)
+        img_for_leaf = Image.fromarray(leaf_crop_rgb)
+        leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img_for_leaf)
 
         # JALUR B: DETEKSI KEMATANGAN BUAH (OPENCV AUTO-CROP)
         cropped_bgr = auto_crop_strawberry(raw_bgr)
@@ -420,6 +477,8 @@ def predict():
             "disease_probabilities": leaf_probs,
             "image_url": f"/static/latest.jpg?t={ts_cache}",
             "cropped_url": f"/static/latest_crop.jpg?t={ts_cache}",
+            "leaf_image_url": f"/static/latest_daun.jpg?t={ts_cache}",
+            "leaf_cropped_url": f"/static/latest_crop_daun.jpg?t={ts_cache}",
             "probabilities": {CLASS_NAMES[i]: round(float(probabilities[i]), 6) for i in range(len(CLASS_NAMES))}
         }
         latest_result = result
@@ -454,6 +513,10 @@ def api_latest():
         payload["image_url"] = f"/static/latest.jpg?t={int(os.path.getmtime(LATEST_IMAGE))}"
     if os.path.exists(LATEST_CROP_IMAGE) and "cropped_url" not in payload:
         payload["cropped_url"] = f"/static/latest_crop.jpg?t={int(os.path.getmtime(LATEST_CROP_IMAGE))}"
+    if os.path.exists(LATEST_DAUN_IMAGE) and "leaf_image_url" not in payload:
+        payload["leaf_image_url"] = f"/static/latest_daun.jpg?t={int(os.path.getmtime(LATEST_DAUN_IMAGE))}"
+    if os.path.exists(LATEST_CROP_DAUN_IMAGE) and "leaf_cropped_url" not in payload:
+        payload["leaf_cropped_url"] = f"/static/latest_crop_daun.jpg?t={int(os.path.getmtime(LATEST_CROP_DAUN_IMAGE))}"
     return jsonify(payload)
 
 @app.route("/api/capture", methods=["GET", "POST"])
@@ -485,7 +548,14 @@ def predict_disease_mobile():
             return jsonify({"error": "File gambar tidak ditemukan."}), 400
 
         img = ImageOps.exif_transpose(img).convert("RGB")
-        leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img)
+        img.save(LATEST_DAUN_IMAGE, format="JPEG", quality=95)
+        raw_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        leaf_cropped_bgr = auto_crop_leaf(raw_bgr)
+        cv2.imwrite(LATEST_CROP_DAUN_IMAGE, leaf_cropped_bgr)
+        leaf_crop_rgb = cv2.cvtColor(leaf_cropped_bgr, cv2.COLOR_BGR2RGB)
+        img_for_leaf = Image.fromarray(leaf_crop_rgb)
+        leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img_for_leaf)
+        ts_cache = int(datetime.now().timestamp())
 
         return jsonify({
             "status": "success",
@@ -493,7 +563,9 @@ def predict_disease_mobile():
             "versi_model": "mobilenetv2_penyakit_daun.keras",
             "penyakit_daun": leaf_status,
             "confidence": leaf_conf,
-            "probabilities": leaf_probs
+            "probabilities": leaf_probs,
+            "leaf_image_url": f"/static/latest_daun.jpg?t={ts_cache}",
+            "leaf_cropped_url": f"/static/latest_crop_daun.jpg?t={ts_cache}"
         }), 200
 
     except Exception as e:

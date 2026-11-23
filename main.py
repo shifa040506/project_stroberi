@@ -16,9 +16,9 @@ from PIL import Image, ImageOps
 
 import firebase_admin
 from firebase_admin import credentials, db
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
-from auth_backend import auth_bp, device_required, login_required
+from auth_backend import auth_bp, device_required
 from ai_backend import create_ai_routes
 
 # =====================================================
@@ -92,6 +92,7 @@ DISEASE_LABELS_PATH = os.path.join(BASE_DIR, "model", "class_names_daun.json")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 LATEST_IMAGE = os.path.join(STATIC_DIR, "latest.jpg")
 LATEST_CROP_IMAGE = os.path.join(STATIC_DIR, "latest_crop.jpg")
+LATEST_CROP_DAUN_IMAGE = os.path.join(STATIC_DIR, "latest_crop_daun.jpg")
 
 os.makedirs(STATIC_DIR, exist_ok=True)
 
@@ -446,7 +447,6 @@ def predict():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route("/api/latest", methods=["GET"])
-@login_required
 def api_latest():
     payload = dict(latest_result)
     payload["sensor"] = latest_sensor
@@ -454,10 +454,11 @@ def api_latest():
         payload["image_url"] = f"/static/latest.jpg?t={int(os.path.getmtime(LATEST_IMAGE))}"
     if os.path.exists(LATEST_CROP_IMAGE) and "cropped_url" not in payload:
         payload["cropped_url"] = f"/static/latest_crop.jpg?t={int(os.path.getmtime(LATEST_CROP_IMAGE))}"
+    if os.path.exists(LATEST_CROP_DAUN_IMAGE) and "leaf_cropped_url" not in payload:
+        payload["leaf_cropped_url"] = f"/static/latest_crop_daun.jpg?t={int(os.path.getmtime(LATEST_CROP_DAUN_IMAGE))}"
     return jsonify(payload)
 
 @app.route("/api/capture", methods=["GET", "POST"])
-@login_required
 def trigger_capture():
     try:
         esp32_url = f"{ESP32_IP}/capture"
@@ -469,11 +470,21 @@ def trigger_capture():
     except Exception as e:
         return jsonify({"status": "error", "error": "Gagal menghubungi ESP32"}), 500
 
+@app.route("/api/latest-crop-daun", methods=["GET"])
+def get_latest_crop_daun():
+    if not os.path.exists(LATEST_CROP_DAUN_IMAGE):
+        return jsonify({"status": "error", "error": "Gambar crop daun belum tersedia."}), 404
+    return send_file(
+        LATEST_CROP_DAUN_IMAGE,
+        mimetype="image/jpeg",
+        max_age=0,
+        last_modified=os.path.getmtime(LATEST_CROP_DAUN_IMAGE),
+    )
+
 # =====================================================
 # RUTE FLASK (DETEKSI DAUN VIA MOBILE FLUTTER)
 # =====================================================
 @app.route("/api/predict-disease", methods=["POST"])
-@login_required
 def predict_disease_mobile():
     try:
         img = None
@@ -485,7 +496,9 @@ def predict_disease_mobile():
             return jsonify({"error": "File gambar tidak ditemukan."}), 400
 
         img = ImageOps.exif_transpose(img).convert("RGB")
+        img.save(LATEST_CROP_DAUN_IMAGE, format="JPEG", quality=95)
         leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img)
+        ts_cache = int(datetime.now().timestamp())
 
         return jsonify({
             "status": "success",
@@ -493,7 +506,8 @@ def predict_disease_mobile():
             "versi_model": "mobilenetv2_penyakit_daun.keras",
             "penyakit_daun": leaf_status,
             "confidence": leaf_conf,
-            "probabilities": leaf_probs
+            "probabilities": leaf_probs,
+            "leaf_cropped_url": f"/static/latest_crop_daun.jpg?t={ts_cache}"
         }), 200
 
     except Exception as e:
@@ -503,7 +517,6 @@ def predict_disease_mobile():
 # RUTE FLASK (SENSOR & KONTROL RELAY ESP8266)
 # =====================================================
 @app.route("/api/control", methods=["GET", "POST"])
-@login_required
 def handle_control():
     global control_state, latest_sensor
     if request.method == "POST":
@@ -536,7 +549,6 @@ def handle_control():
     return jsonify(control_state), 200
 
 @app.get("/api/sensor")
-@login_required
 def sensor_read():
     return jsonify(latest_sensor), 200
 

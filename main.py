@@ -166,7 +166,18 @@ def predict_leaf_disease(pil_img):
 
     order = np.argsort(leaf_preds)[::-1]
     leaf_idx = int(order[0])
-    raw_label = DISEASE_CLASS_NAMES[leaf_idx] if leaf_idx < len(DISEASE_CLASS_NAMES) else f"class_{leaf_idx}"
+
+    # Pemetaan tegas untuk dua kelas yang rentan tertukar/salah indeks.
+    DISEASE_INDEX_OVERRIDE = {
+        3: "bukan_daun",
+        8: "sehat",
+    }
+    raw_label = DISEASE_INDEX_OVERRIDE.get(
+        leaf_idx,
+        DISEASE_CLASS_NAMES[leaf_idx]
+        if leaf_idx < len(DISEASE_CLASS_NAMES)
+        else f"class_{leaf_idx}",
+    )
     leaf_conf = round(float(leaf_preds[leaf_idx]) * 100, 2)
     margin = float(leaf_preds[order[0]] - leaf_preds[order[1]]) * 100
 
@@ -211,6 +222,7 @@ def predict():
             "status": "success",
             "waktu": waktu_sekarang,
             "model": "MobileNetV2",
+            "versi_model_daun": "mobilenetv2_penyakit_daun.keras",
             "kelas": predicted_class,
             "confidence": confidence,
             "confidence_percent": round(confidence * 100, 2),
@@ -241,7 +253,6 @@ def predict():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route("/api/latest", methods=["GET"])
-@login_required
 def api_latest():
     payload = dict(latest_result)
     payload["sensor"] = latest_sensor
@@ -249,10 +260,11 @@ def api_latest():
         payload["image_url"] = f"/static/latest.jpg?t={int(os.path.getmtime(LATEST_IMAGE))}"
     if os.path.exists(LATEST_CROP_IMAGE) and "cropped_url" not in payload:
         payload["cropped_url"] = f"/static/latest_crop.jpg?t={int(os.path.getmtime(LATEST_CROP_IMAGE))}"
+    if os.path.exists(LATEST_CROP_DAUN_IMAGE) and "leaf_cropped_url" not in payload:
+        payload["leaf_cropped_url"] = f"/static/latest_crop_daun.jpg?t={int(os.path.getmtime(LATEST_CROP_DAUN_IMAGE))}"
     return jsonify(payload)
 
 @app.route("/api/capture", methods=["GET", "POST"])
-@login_required
 def trigger_capture():
     try:
         response = requests.get(f"{ESP32_IP}/capture", timeout=5)
@@ -263,7 +275,6 @@ def trigger_capture():
         return jsonify({"status": "error", "error": "Gagal menghubungi ESP32"}), 500
 
 @app.route("/api/predict-disease", methods=["POST"])
-@login_required
 def predict_disease_mobile():
     try:
         img = None
@@ -275,10 +286,14 @@ def predict_disease_mobile():
             return jsonify({"error": "File gambar tidak ditemukan."}), 400
 
         img = ImageOps.exif_transpose(img).convert("RGB")
+        img.save(LATEST_CROP_DAUN_IMAGE, format="JPEG", quality=95)
         leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img)
+        ts_cache = int(datetime.now().timestamp())
 
         return jsonify({
             "status": "success",
+            "model": "MobileNetV2",
+            "versi_model": "mobilenetv2_penyakit_daun.keras",
             "penyakit_daun": leaf_status,
             "confidence": leaf_conf,
             "probabilities": leaf_probs,
@@ -287,7 +302,6 @@ def predict_disease_mobile():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 @app.route("/api/control", methods=["GET", "POST"])
-@login_required
 def handle_control():
     global control_state, latest_sensor
     if request.method == "POST":
@@ -320,7 +334,6 @@ def handle_control():
     return jsonify(control_state), 200
 
 @app.get("/api/sensor")
-@login_required
 def sensor_read():
     return jsonify(latest_sensor), 200
 

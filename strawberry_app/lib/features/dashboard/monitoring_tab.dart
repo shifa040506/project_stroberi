@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart'; // ROI: crop manual
 import 'package:provider/provider.dart';
 
 import '../../api_client.dart';
@@ -71,27 +73,109 @@ class _MonitoringTabState extends State<MonitoringTab> {
         _fetchSensor();
       }
     } on ApiException catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.pesan)));
+      }
     }
   }
 
-  Future<void> _capture() async {
+  // ---- ROI: layar crop persegi (1:1), sama dengan potongan data latih ----
+  Future<Uint8List?> _cropRoi(String path) async {
+    final layar = MediaQuery.sizeOf(context);
+    final cropWidth = math
+        .min(layar.width - 24, 520.0)
+        .clamp(280.0, 520.0)
+        .round();
+    final cropHeight = math
+        .min(layar.height - 24, 520.0)
+        .clamp(360.0, 520.0)
+        .round();
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      maxWidth: 640, // cukup untuk model 224x224; unggahan lebih cepat
+      maxHeight: 640,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 85,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Pilih area gejala penyakit',
+          lockAspectRatio: true,
+          hideBottomControls: true,
+          initAspectRatio: CropAspectRatioPreset.square,
+        ),
+        IOSUiSettings(
+          title: 'Pilih area gejala penyakit',
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+        ),
+        WebUiSettings(
+          context: context,
+          presentStyle: WebPresentStyle.dialog,
+          size: CropperSize(width: cropWidth, height: cropHeight),
+          viewwMode: WebViewMode.mode_3,
+          dragMode: WebDragMode.move,
+          modal: true,
+          movable: true,
+          scalable: true,
+          zoomable: true,
+          zoomOnTouch: true,
+          zoomOnWheel: true,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          minContainerWidth: 280,
+          minContainerHeight: 280,
+          minCropBoxWidth: 120,
+          minCropBoxHeight: 120,
+          barrierColor: Colors.black54,
+        ),
+      ],
+    );
+    if (cropped == null) return null;
+    return await cropped.readAsBytes();
+  }
+
+  Future<void> _capture([ImageSource sumber = ImageSource.camera]) async {
+    if (!mounted) return;
     final picked = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-      maxWidth: 1024,
+      source: sumber,
+      imageQuality: 90, // ROI: resolusi tinggi dulu agar hasil crop tetap tajam
+      maxWidth: 2048,
+      preferredCameraDevice: CameraDevice.rear,
     );
     if (picked == null) return;
+    if (!mounted) return;
+    debugPrint('ROI: foto diambil, membuka crop... path=${picked.path}');
+
+    // ROI: pengguna memotong satu daun; batal / gagal = tidak ada analisis
+    final Uint8List? hasilCrop;
+    try {
+      hasilCrop = await _cropRoi(picked.path);
+    } catch (e) {
+      debugPrint('ROI: crop gagal: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Crop tidak tersedia di platform ini: $e')),
+        );
+      }
+      return; // jangan kirim foto penuh
+    }
+    debugPrint(
+      'ROI: hasil crop = ${hasilCrop == null ? "dibatalkan" : "${hasilCrop.length} byte"}',
+    );
+    if (hasilCrop == null) return;
+    if (!mounted) return;
+    final bytes = hasilCrop; // non-null mulai dari sini
+
     setState(() {
       _loading = true;
       _diagnosis = 'Menganalisis gambar...';
       _advice = '';
     });
     try {
-      final bytes = await picked.readAsBytes();
       final response = await context.read<AuthState>().api.upload(
         '/api/predict-disease',
         bytes,
@@ -175,17 +259,65 @@ class _MonitoringTabState extends State<MonitoringTab> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 10),
-          FilledButton.icon(
-            onPressed: _loading ? null : _capture,
-            icon: const Icon(Icons.camera_alt),
-            label: Text(_loading ? 'Menganalisis...' : 'Foto daun & analisis'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _loading
+                      ? null
+                      : () => _capture(ImageSource.camera),
+                  icon: const Icon(Icons.camera_alt),
+                  label: Text(_loading ? 'Menganalisis...' : 'Foto daun'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _loading
+                      ? null
+                      : () => _capture(ImageSource.gallery),
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Dari galeri'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Card(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.crop, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'ROI aktif: setelah memilih foto, potong persegi pada area gejala '
+                      'yang dituju (bercak, warna berubah, atau lapisan jamur), lalu tekan centang.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           if (_image != null) ...[
             const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.memory(_image!, height: 220, fit: BoxFit.cover),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 280),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: Image.memory(_image!, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
             ),
+            const SizedBox(height: 6),
+            const Center(child: Text('Area yang dianalisis')),
             const SizedBox(height: 12),
             Card(
               child: Padding(

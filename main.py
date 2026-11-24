@@ -348,6 +348,47 @@ def auto_crop_strawberry(img_bgr, min_area=500):
     margin_y = int(img_h * 0.18)
     return img_bgr[margin_y:img_h - margin_y, margin_x:img_w - margin_x]
 
+def predict_fruit_condition(pil_img, cropped_bgr=None):
+    raw_bgr = cv2.cvtColor(np.array(pil_img.convert("RGB")), cv2.COLOR_RGB2BGR)
+    if cropped_bgr is None:
+        cropped_bgr = auto_crop_strawberry(raw_bgr)
+    if cropped_bgr is not None:
+        crop_rgb = cv2.cvtColor(cropped_bgr, cv2.COLOR_BGR2RGB)
+        img_for_fruit = Image.fromarray(crop_rgb)
+    else:
+        img_for_fruit = pil_img.convert("RGB")
+
+    img_resized = img_for_fruit.resize(
+        (INPUT_WIDTH, INPUT_HEIGHT),
+        Image.Resampling.LANCZOS,
+    )
+    image_array = np.expand_dims(
+        np.asarray(img_resized, dtype=np.float32) / 255.0,
+        axis=0,
+    )
+    with lock:
+        predictions = model.predict(image_array, verbose=0)
+
+    probabilities = predictions[0]
+    predicted_index = int(np.argmax(probabilities))
+    confidence = float(probabilities[predicted_index])
+    predicted_class = (
+        CLASS_NAMES[predicted_index]
+        if confidence >= 0.40
+        else "Tidak Diketahui"
+    )
+    class_probabilities = {
+        CLASS_NAMES[i]: round(float(probabilities[i]) * 100, 2)
+        for i in range(min(len(CLASS_NAMES), len(probabilities)))
+    }
+    return (
+        predicted_class,
+        confidence,
+        class_probabilities,
+        cropped_bgr,
+        probabilities,
+    )
+
 # =====================================================
 # RUTE FLASK (HALAMAN WEB & DETEKSI BUAH + DAUN)
 # =====================================================
@@ -372,36 +413,22 @@ def predict():
 
         img = ImageOps.exif_transpose(img).convert("RGB")
         img.save(LATEST_IMAGE, format="JPEG", quality=95)
-        raw_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
         # JALUR A: DETEKSI PENYAKIT DAUN (FULL FRAME)
         leaf_status, leaf_conf, leaf_probs = predict_leaf_disease(img)
 
         # JALUR B: DETEKSI KEMATANGAN BUAH (OPENCV AUTO-CROP)
-        cropped_bgr = auto_crop_strawberry(raw_bgr)
+        (
+            predicted_class,
+            confidence,
+            _,
+            cropped_bgr,
+            raw_probabilities,
+        ) = predict_fruit_condition(img)
         if cropped_bgr is not None:
             cv2.imwrite(LATEST_CROP_IMAGE, cropped_bgr)
-            crop_rgb = cv2.cvtColor(cropped_bgr, cv2.COLOR_BGR2RGB)
-            img_for_fruit = Image.fromarray(crop_rgb)
             crop_detected = True
         else:
-            img_for_fruit = img
             crop_detected = False
-
-        img_resized = img_for_fruit.resize((INPUT_WIDTH, INPUT_HEIGHT), Image.Resampling.LANCZOS)
-        image_array = np.expand_dims(np.asarray(img_resized, dtype=np.float32) / 255.0, axis=0)
-
-        with lock:
-            predictions = model.predict(image_array, verbose=0)
-
-        probabilities = predictions[0]
-        predicted_index = int(np.argmax(probabilities))
-        confidence = float(probabilities[predicted_index])
-
-        if confidence < 0.40:
-            predicted_class = "Tidak Diketahui"
-        else:
-            predicted_class = CLASS_NAMES[predicted_index]
 
         waktu_sekarang = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ts_cache = int(datetime.now().timestamp())
@@ -421,7 +448,10 @@ def predict():
             "disease_probabilities": leaf_probs,
             "image_url": f"/static/latest.jpg?t={ts_cache}",
             "cropped_url": f"/static/latest_crop.jpg?t={ts_cache}",
-            "probabilities": {CLASS_NAMES[i]: round(float(probabilities[i]), 6) for i in range(len(CLASS_NAMES))}
+            "probabilities": {
+                CLASS_NAMES[i]: round(float(raw_probabilities[i]), 6)
+                for i in range(len(CLASS_NAMES))
+            }
         }
         latest_result = result
 
@@ -508,6 +538,44 @@ def predict_disease_mobile():
             "confidence": leaf_conf,
             "probabilities": leaf_probs,
             "leaf_cropped_url": f"/static/latest_crop_daun.jpg?t={ts_cache}"
+        }), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route("/api/predict-fruit", methods=["POST"])
+def predict_fruit_mobile():
+    try:
+        uploaded = request.files.get("file") or request.files.get("image")
+        if uploaded is None or uploaded.filename == "":
+            return jsonify({"error": "File gambar tidak ditemukan."}), 400
+
+        img = ImageOps.exif_transpose(Image.open(uploaded.stream)).convert("RGB")
+        img.save(LATEST_IMAGE, format="JPEG", quality=95)
+        raw_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        cropped_bgr = auto_crop_strawberry(raw_bgr)
+        crop_to_save = (
+            cropped_bgr
+            if cropped_bgr is not None
+            else raw_bgr
+        )
+        if not cv2.imwrite(LATEST_CROP_IMAGE, crop_to_save):
+            raise OSError("Gagal menyimpan hasil crop buah.")
+
+        fruit_class, confidence, probabilities, cropped_bgr, _ = (
+            predict_fruit_condition(img, cropped_bgr=cropped_bgr)
+        )
+
+        ts_cache = int(datetime.now().timestamp())
+        return jsonify({
+            "status": "success",
+            "model": "MobileNetV2",
+            "versi_model": "best_mobilenetv2_strawberry.keras",
+            "kondisi_buah": fruit_class,
+            "confidence": round(confidence * 100, 2),
+            "probabilities": probabilities,
+            "image_url": f"/static/latest.jpg?t={ts_cache}",
+            "cropped_url": f"/static/latest_crop.jpg?t={ts_cache}",
         }), 200
 
     except Exception as e:

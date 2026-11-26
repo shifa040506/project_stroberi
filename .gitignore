@@ -3,3 +3,4 @@ firebase_key.json
 __pycache__/
 static/latest*.jpg
 *.pyc
+static/roi_debug/

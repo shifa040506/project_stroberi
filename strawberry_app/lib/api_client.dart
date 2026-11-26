@@ -43,10 +43,14 @@ class ApiClient {
   Future<Map<String, dynamic>> get(
     String path, {
     bool auth = true,
+    Map<String, String>? query,
     Duration timeout = const Duration(seconds: 10),
   }) {
     return _run(
-      () async => http.get(_uri(path), headers: await _headers(auth: auth)),
+      () async => http.get(
+        _uri(path).replace(queryParameters: query),
+        headers: await _headers(auth: auth),
+      ),
       auth: auth,
       timeout: timeout,
     );
@@ -60,6 +64,23 @@ class ApiClient {
   }) {
     return _run(
       () async => http.post(
+        _uri(path),
+        headers: await _headers(auth: auth),
+        body: jsonEncode(body),
+      ),
+      auth: auth,
+      timeout: timeout,
+    );
+  }
+
+  Future<Map<String, dynamic>> put(
+    String path,
+    Map<String, dynamic> body, {
+    bool auth = true,
+    Duration timeout = const Duration(seconds: 15),
+  }) {
+    return _run(
+      () async => http.put(
         _uri(path),
         headers: await _headers(auth: auth),
         body: jsonEncode(body),

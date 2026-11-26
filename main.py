@@ -20,6 +20,7 @@ from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from auth_backend import auth_bp, device_required
 from ai_backend import create_ai_routes
+from parameter_backend import garden_bp
 
 # =====================================================
 # INISIALISASI FLASK & CORS
@@ -224,6 +225,7 @@ control_state = {
 }
 
 app.register_blueprint(auth_bp)
+app.register_blueprint(garden_bp)
 app.register_blueprint(
     create_ai_routes(
         lambda: {"sensor": latest_sensor, "diagnosis": latest_result}

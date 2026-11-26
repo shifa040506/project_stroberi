@@ -216,7 +216,17 @@ created_at / updated_at ◄────────┘  (1 pengguna : banyak kod
 | `gagal_login`, `terkunci_sampai` | Pembatas tebak-tebak password |
 | `code_hash` dan `attempts` | Kode OTP tidak tersimpan asli, dan dibatasi 5 kali salah ketik |
 
-Tabel untuk **parameter** (batas suhu, jadwal, dan sebagainya) sengaja belum dibuat, karena fitur itu masih kosong. Tambahkan saat fiturnya dikerjakan.
+API kebun memakai tabel `parameter_sensor`, `profil_kebun`, dan `laporan` yang sudah tersedia pada database. Setiap data dibatasi ke kebun milik akun yang sedang login melalui `profil_kebun.user_id`.
+
+| Endpoint | Fungsi |
+|---|---|
+| `GET /api/parameter` | Membaca ambang sensor untuk kebun pengguna |
+| `PUT /api/parameter/<sensor>` | Menyimpan batas kritis bawah/atas dan batas optimal bawah/atas. Sensor: `suhu_udara`, `suhu_tanah`, `kelembaban_tanah` |
+| `GET /api/profil-kebun` | Membaca profil kebun |
+| `PUT /api/profil-kebun` | Membuat atau memperbarui profil kebun |
+| `GET /api/histori?hari=1` | Membaca laporan dengan filter `hari=1`, `2`, `3`, atau `7` |
+
+Semua endpoint tersebut membutuhkan token `Bearer` dari autentikasi. Ambang sensor hanya disimpan dan dibaca melalui SQL; pengiriman konfigurasi ke MQTT/Firebase belum dilakukan oleh endpoint ini.
 
 ### 1.2 Jalankan skrip
 

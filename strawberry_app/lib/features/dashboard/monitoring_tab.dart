@@ -23,8 +23,10 @@ class _MonitoringTabState extends State<MonitoringTab> {
   String _fan = 'OFF';
   String _pump = 'OFF';
   String _updated = '-';
-  Uint8List? _image;
-  String _diagnosis = '';
+  Uint8List? _leafImage;
+  Uint8List? _fruitImage;
+  String _leafDiagnosis = '';
+  String _fruitDiagnosis = '';
   String _advice = '';
   bool _loading = false;
   bool _connected = false;
@@ -81,7 +83,7 @@ class _MonitoringTabState extends State<MonitoringTab> {
     }
   }
 
-  // ---- ROI: layar crop persegi (1:1), sama dengan potongan data latih ----
+  // Crop manual khusus area daun sebelum pemeriksaan penyakit.
   Future<Uint8List?> _cropRoi(String path) async {
     final layar = MediaQuery.sizeOf(context);
     final cropWidth = math
@@ -138,7 +140,7 @@ class _MonitoringTabState extends State<MonitoringTab> {
     return await cropped.readAsBytes();
   }
 
-  Future<void> _capture([ImageSource sumber = ImageSource.camera]) async {
+  Future<void> _capture(ImageSource sumber, {required bool fruit}) async {
     if (!mounted) return;
     final picked = await ImagePicker().pickImage(
       source: sumber,
@@ -148,57 +150,88 @@ class _MonitoringTabState extends State<MonitoringTab> {
     );
     if (picked == null) return;
     if (!mounted) return;
-    debugPrint('ROI: foto diambil, membuka crop... path=${picked.path}');
+    debugPrint(
+      fruit
+          ? 'Foto buah dipilih untuk auto-crop backend: path=${picked.path}'
+          : 'Foto daun diambil, membuka crop... path=${picked.path}',
+    );
 
-    // ROI: pengguna memotong satu daun; batal / gagal = tidak ada analisis
-    final Uint8List? hasilCrop;
+    final Uint8List? hasilFoto;
     try {
-      hasilCrop = await _cropRoi(picked.path);
+      hasilFoto = fruit
+          ? await picked.readAsBytes()
+          : await _cropRoi(picked.path);
     } catch (e) {
-      debugPrint('ROI: crop gagal: $e');
+      debugPrint('Gagal menyiapkan foto untuk analisis: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Crop tidak tersedia di platform ini: $e')),
+          SnackBar(
+            content: Text(
+              fruit
+                  ? 'Foto tidak dapat dibaca: $e'
+                  : 'Crop tidak tersedia di platform ini: $e',
+            ),
+          ),
         );
       }
-      return; // jangan kirim foto penuh
+      return;
     }
-    debugPrint(
-      'ROI: hasil crop = ${hasilCrop == null ? "dibatalkan" : "${hasilCrop.length} byte"}',
-    );
-    if (hasilCrop == null) return;
+    if (hasilFoto == null) return;
     if (!mounted) return;
-    final bytes = hasilCrop; // non-null mulai dari sini
+    final bytes = hasilFoto;
 
     setState(() {
       _loading = true;
-      _diagnosis = 'Menganalisis gambar...';
-      _advice = '';
+      if (fruit) {
+        _fruitDiagnosis = 'Menganalisis gambar...';
+      } else {
+        _leafDiagnosis = 'Menganalisis gambar...';
+        _advice = '';
+      }
     });
     try {
       final response = await context.read<AuthState>().api.upload(
-        '/api/predict-disease',
+        fruit ? '/api/predict-fruit' : '/api/predict-disease',
         bytes,
       );
-      final disease = (response['penyakit_daun'] ?? '').toString();
+      final result = (response[fruit ? 'kondisi_buah' : 'penyakit_daun'] ?? '')
+          .toString();
       if (!mounted) return;
       setState(() {
-        _image = bytes;
-        _diagnosis =
-            '${disease.replaceAll('_', ' ').toUpperCase()} (${response['confidence'] ?? '-'}%)';
+        if (fruit) {
+          _fruitImage = bytes;
+          _fruitDiagnosis =
+              '${result.replaceAll('_', ' ').toUpperCase()} (${response['confidence'] ?? '-'}%)';
+        } else {
+          _leafImage = bytes;
+          _leafDiagnosis =
+              '${result.replaceAll('_', ' ').toUpperCase()} (${response['confidence'] ?? '-'}%)';
+        }
       });
-      if (disease.isNotEmpty && disease != 'Tidak yakin') {
-        final ai = await context.read<AuthState>().api.post('/api/ai/tanya', {
-          'pesan':
-              "Daun stroberi saya terdeteksi '$disease'. Beri analisis singkat dan 3 langkah penanganan.",
-        }, timeout: const Duration(seconds: 45));
-        if (mounted) setState(() => _advice = (ai['jawaban'] ?? '').toString());
+      if (!fruit && result.isNotEmpty && result != 'Tidak yakin') {
+        try {
+          final ai = await context.read<AuthState>().api.post('/api/ai/tanya', {
+            'pesan':
+                "Daun stroberi saya terdeteksi '$result'. Beri analisis singkat dan 3 langkah penanganan.",
+          }, timeout: const Duration(seconds: 45));
+          if (mounted) {
+            setState(() => _advice = (ai['jawaban'] ?? '').toString());
+          }
+        } on ApiException catch (error) {
+          if (mounted) {
+            setState(() => _advice = 'Saran AI tidak tersedia: ${error.pesan}');
+          }
+        }
       }
     } on ApiException catch (error) {
       if (mounted) {
         setState(() {
-          _diagnosis = 'Gagal menganalisis';
-          _advice = error.pesan;
+          if (fruit) {
+            _fruitDiagnosis = 'Gagal menganalisis: ${error.pesan}';
+          } else {
+            _leafDiagnosis = 'Gagal menganalisis';
+            _advice = error.pesan;
+          }
         });
       }
     } finally {
@@ -255,29 +288,26 @@ class _MonitoringTabState extends State<MonitoringTab> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Diagnosis penyakit daun',
+            'Pemeriksaan tanaman',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: _loading
-                      ? null
-                      : () => _capture(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt),
-                  label: Text(_loading ? 'Menganalisis...' : 'Foto daun'),
+                child: _inspectionCard(
+                  title: 'Penyakit daun',
+                  icon: Icons.eco_outlined,
+                  fruit: false,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _loading
-                      ? null
-                      : () => _capture(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Dari galeri'),
+                child: _inspectionCard(
+                  title: 'Kondisi buah',
+                  icon: Icons.spa_outlined,
+                  fruit: true,
                 ),
               ),
             ],
@@ -294,31 +324,18 @@ class _MonitoringTabState extends State<MonitoringTab> {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'ROI aktif: setelah memilih foto, potong persegi pada area gejala '
-                      'yang dituju (bercak, warna berubah, atau lapisan jamur), lalu tekan centang.',
+                      'Pemeriksaan daun menggunakan crop manual pada area gejala. '
+                      'Foto buah dikirim utuh agar sistem melakukan auto-crop ROI (Region of Interest).',
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (_image != null) ...[
-            const SizedBox(height: 16),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 280),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Image.memory(_image!, fit: BoxFit.cover),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Center(child: Text('Area yang dianalisis')),
-            const SizedBox(height: 12),
+          const SizedBox(height: 12),
+          _conclusionCard(),
+          if (_advice.isNotEmpty) ...[
+            const SizedBox(height: 8),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -326,25 +343,117 @@ class _MonitoringTabState extends State<MonitoringTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _diagnosis,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      'Saran penanganan daun',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (_loading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 12),
-                        child: LinearProgressIndicator(),
-                      ),
-                    if (_advice.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(_advice),
-                      ),
+                    const SizedBox(height: 6),
+                    Text(_advice),
                   ],
                 ),
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _inspectionCard({
+    required String title,
+    required IconData icon,
+    required bool fruit,
+  }) {
+    final image = fruit ? _fruitImage : _leafImage;
+    final diagnosis = fruit ? _fruitDiagnosis : _leafDiagnosis;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (image != null) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.memory(image, fit: BoxFit.cover),
+                ),
+              ),
+            ],
+            if (diagnosis.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(diagnosis, textAlign: TextAlign.center),
+            ],
+            if (_loading && diagnosis == 'Menganalisis gambar...')
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: LinearProgressIndicator(),
+              ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _loading
+                  ? null
+                  : () => _capture(ImageSource.camera, fruit: fruit),
+              icon: const Icon(Icons.camera_alt, size: 18),
+              label: const Text('Kamera'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: _loading
+                  ? null
+                  : () => _capture(ImageSource.gallery, fruit: fruit),
+              icon: const Icon(Icons.photo_library, size: 18),
+              label: const Text('Galeri'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _conclusionCard() {
+    final hasLeaf = _leafDiagnosis.isNotEmpty;
+    final hasFruit = _fruitDiagnosis.isNotEmpty;
+    final String conclusion;
+    if (!hasLeaf && !hasFruit) {
+      conclusion =
+          'Lakukan pemeriksaan penyakit daun dan/atau kondisi buah. Kesimpulan akan tampil di sini.';
+    } else if (hasLeaf && hasFruit) {
+      conclusion =
+          'Berdasarkan dua pemeriksaan, daun: $_leafDiagnosis; kondisi buah: $_fruitDiagnosis.';
+    } else {
+      final result = hasLeaf
+          ? 'Daun: $_leafDiagnosis'
+          : 'Buah: $_fruitDiagnosis';
+      final missing = hasLeaf ? 'kondisi buah' : 'penyakit daun';
+      conclusion = '$result. Periksa $missing untuk melengkapi kesimpulan.';
+    }
+
+    return Card(
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Kesimpulan', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 6),
+            Text(conclusion),
+          ],
+        ),
       ),
     );
   }

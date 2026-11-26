@@ -1694,6 +1694,7 @@ Semua jawaban berbentuk JSON. Error: `{"status": "error", "error": "pesan"}`.
 | POST | `/api/sensor` | `X-Device-Key` | data sensor dari ESP8266 | perintah kontrol untuk ESP |
 | GET/POST | `/api/control` | token | `device, action` | status kontrol |
 | POST | `/api/predict-disease` | token | form `file` (foto) | `penyakit_daun, confidence, probabilities` |
+| POST | `/api/predict-fruit` | token | form `file` (foto buah) | `kondisi_buah, confidence, probabilities` |
 
 Header token: `Authorization: Bearer <token>`. Kode status yang dipakai: 400 isian salah, 401 belum login atau sesi habis, 403 belum verifikasi, 409 sudah terdaftar, 429 terlalu sering, 502 email/AI gagal.
 

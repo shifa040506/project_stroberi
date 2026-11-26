@@ -4,103 +4,1012 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lab Proses ROI & Kematangan Stroberi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Lab Proses ROI & Kematangan Buah — Strawberry Care</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg-page: #f2f6f3;
+            --bg-card: #ffffff;
+            --green-dark: #1b4332;
+            --green-primary: #2d6a4f;
+            --green-hover: #245740;
+            --green-soft: #e8f3ed;
+            --berry-accent: #d93848;
+            --berry-hover: #be2b3a;
+            --berry-soft: #fdf2f3;
+            --amber-bg: #fef3c7;
+            --amber-text: #b45309;
+            --text-main: #18261f;
+            --text-muted: #5c7066;
+            --border-color: #d6e2dc;
+            --shadow-sm: 0 4px 20px -6px rgba(27, 67, 50, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--green-dark);
+            color: #ffffff;
+            padding: 0 24px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            box-shadow: 0 4px 18px rgba(27, 67, 50, 0.16);
+        }
+
+        .nav-inner {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        .nav-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, 0.14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .nav-subtitle {
+            font-size: 11.5px;
+            color: #b7d4c6;
+            display: block;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #d8ebe1;
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .nav-link.active {
+            background: #ffffff;
+            color: var(--green-dark);
+        }
+
+        .btn-logout {
+            text-decoration: none;
+            background: rgba(217, 56, 72, 0.18);
+            border: 1px solid rgba(255, 165, 174, 0.35);
+            color: #ffd6da;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 13px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: var(--berry-accent);
+            border-color: var(--berry-accent);
+            color: #ffffff;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 28px 24px 56px;
+        }
+
+        .page-header {
+            margin-bottom: 22px;
+        }
+
+        .page-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--green-dark);
+            letter-spacing: -0.02em;
+        }
+
+        .page-header p {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Source Selection Grid */
+        .source-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+
+        .card-badge.berry {
+            background: var(--berry-soft);
+            color: var(--berry-accent);
+        }
+
+        .card-badge.green {
+            background: var(--green-soft);
+            color: var(--green-primary);
+        }
+
+        .card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--green-dark);
+            margin-bottom: 4px;
+        }
+
+        .card p.sub {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .upload-zone {
+            border: 2px dashed #b9cfc4;
+            border-radius: 13px;
+            background: #f8fbf9;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 14px;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--green-primary);
+            background: var(--green-soft);
+        }
+
+        .upload-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .upload-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--green-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-hint {
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        .btn-browse {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--green-dark);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 7px 12px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            width: 100%;
+            height: 44px;
+            border: none;
+            border-radius: 11px;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .btn-berry {
+            background: var(--berry-accent);
+            color: #ffffff;
+        }
+
+        .btn-berry:hover:not(:disabled) {
+            background: var(--berry-hover);
+        }
+
+        .btn-green {
+            background: var(--green-primary);
+            color: #ffffff;
+        }
+
+        .btn-green:hover:not(:disabled) {
+            background: var(--green-hover);
+        }
+
+        .esp-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .esp-note {
+            background: #f6faf7;
+            border: 1px solid #e1ece6;
+            border-radius: 12px;
+            padding: 13px 14px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        .esp-note code {
+            background: #e4efe9;
+            color: var(--green-dark);
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-size: 11.5px;
+        }
+
+        /* Alert & Loader */
+        .alert-error {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 13px 16px;
+            border-radius: 13px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .loader-box {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .spinner {
+            width: 34px;
+            height: 34px;
+            border: 3.5px solid var(--green-soft);
+            border-top-color: var(--green-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Results Section */
+        .result-section {
+            display: none;
+        }
+
+        .result-section.visible {
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .metric-val {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .ripeness-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .ripeness-pill.matang {
+            background: var(--berry-soft);
+            color: var(--berry-accent);
+        }
+
+        .ripeness-pill.medium {
+            background: var(--amber-bg);
+            color: var(--amber-text);
+        }
+
+        .ripeness-pill.mentah {
+            background: var(--green-soft);
+            color: var(--green-primary);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 7px;
+            background: #e6eee9;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--green-primary);
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        /* Pipeline Grid */
+        .pipeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .pipeline-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--green-dark);
+        }
+
+        .pipeline-header span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .pipeline-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .stage-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stage-top {
+            padding: 13px 15px;
+            border-bottom: 1px solid #eef4f0;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 7px;
+            background: var(--green-soft);
+            color: var(--green-dark);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stage-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .img-frame {
+            position: relative;
+            background: #101c16;
+            height: 230px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-in;
+            overflow: hidden;
+        }
+
+        .img-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.25s ease;
+        }
+
+        .img-frame:hover img {
+            transform: scale(1.03);
+        }
+
+        .stage-foot {
+            padding: 10px 15px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+            background: #fafcfb;
+            border-top: 1px solid #eef4f0;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        /* Lightbox Modal */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 20, 15, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 60;
+        }
+
+        .lightbox.open {
+            display: flex;
+        }
+
+        .lightbox-content {
+            max-width: 860px;
+            width: 100%;
+            background: #16241d;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .lightbox-bar {
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lightbox-close {
+            background: rgba(255, 255, 255, 0.12);
+            border: none;
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12.5px;
+        }
+
+        .lightbox-img-wrap {
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            background: #0d1612;
+        }
+
+        .lightbox-img-wrap img {
+            max-height: 72vh;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        @media (max-width: 980px) {
+            .source-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pipeline-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .metrics-grid,
+            .pipeline-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-subtitle {
+                display: none;
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-slate-100 text-slate-800 min-h-screen">
-    <nav class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shadow">
-        <h1 class="font-bold text-lg">Lab Proses ROI & Klasifikasi Kematangan Buah</h1>
-        <a href="/" class="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded">&larr; Kembali ke Buat Akun
-            User</a>
-    </nav>
+<body>
+    <header class="navbar">
+        <div class="nav-inner">
+            <a href="/" class="nav-brand">
+                <div class="nav-logo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+                    </svg>
+                </div>
+                <div>
+                    <span class="nav-title">Strawberry Care</span>
+                    <span class="nav-subtitle">Admin Control Panel</span>
+                </div>
+            </a>
 
-    <main class="max-w-6xl mx-auto p-6 space-y-6">
-        <section
-            class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <input type="file" id="imageInput" accept="image/*"
-                    class="text-sm border rounded-lg p-1.5 bg-slate-50" />
-                <button onclick="runRoi('upload')"
-                    class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                    Proses ROI (Upload Gambar)
+            <nav class="nav-actions">
+                <a href="/" class="nav-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                    <span>Manajemen Akun</span>
+                </a>
+                <a href="/roi-lab" class="nav-link active">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span>Lab Proses ROI</span>
+                </a>
+                <a href="/logout" class="btn-logout" title="Keluar dari sesi admin">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Keluar</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>Lab Proses ROI & Klasifikasi Kematangan Buah</h2>
+            <p>Uji tahapan segmentasi warna HSV, operasi morfologi, deteksi Region of Interest (ROI), dan prediksi
+                MobileNetV2.</p>
+        </div>
+
+        <!-- Input Sources -->
+        <section class="source-grid">
+            <div class="card">
+                <span class="card-badge berry">Metode 1 • Uji Gambar Lokal</span>
+                <h3>Upload Foto Stroberi</h3>
+                <p class="sub">Pilih atau seret file gambar dari komputer untuk melihat tahapan pemotongan ROI secara
+                    bertahap.</p>
+
+                <input type="file" id="imageInput" accept="image/*" hidden />
+                <div class="upload-zone" id="dropZone">
+                    <div class="upload-info">
+                        <div class="upload-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </div>
+                        <div style="min-width: 0;">
+                            <div class="file-name" id="fileNameLabel">Belum ada gambar dipilih</div>
+                            <div class="file-hint">Format JPG, PNG, atau WEBP</div>
+                        </div>
+                    </div>
+                    <span class="btn-browse">Pilih File</span>
+                </div>
+
+                <button type="button" id="btnUpload" onclick="runRoi('upload')" class="btn btn-berry">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    <span>Proses ROI dari Gambar Upload</span>
                 </button>
             </div>
-            <button onclick="runRoi('latest_esp32')"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium w-full md:w-auto">
-                Proses dari Foto ESP32 Terakhir
-            </button>
+
+            <div class="card esp-box">
+                <div>
+                    <span class="card-badge green">Metode 2 • Kamera IoT</span>
+                    <h3>Foto ESP32-CAM Terakhir</h3>
+                    <p class="sub">Ambil tangkapan gambar terbaru yang dikirim oleh mikrokontroler ESP32-S3 CAM ke
+                        server.</p>
+                    <div class="esp-note">
+                        Sumber gambar diambil langsung dari file <code>static/latest.jpg</code> hasil pengiriman
+                        terakhir perangkat kamera greenhouse.
+                    </div>
+                </div>
+
+                <button type="button" id="btnEsp" onclick="runRoi('latest_esp32')" class="btn btn-green">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                    </svg>
+                    <span>Proses dari Foto ESP32 Terakhir</span>
+                </button>
+            </div>
         </section>
 
-        <section id="resultBox" class="hidden space-y-6">
-            <div
-                class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                    <span class="text-slate-500 block text-xs">Metode ROI</span>
-                    <strong id="resMethod" class="text-base">-</strong>
+        <!-- Error & Loading -->
+        <div id="errorBox" class="alert-error" role="alert"></div>
+
+        <div id="loaderBox" class="loader-box">
+            <div class="spinner"></div>
+            <div style="font-weight: 600; color: var(--green-dark); font-size: 14px;">Memproses Ekstraksi ROI & Prediksi
+                AI...</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Menjalankan segmentasi HSV,
+                morfologi, dan klasifikasi MobileNetV2</div>
+        </div>
+
+        <!-- Results -->
+        <section id="resultBox" class="result-section">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Metode Ekstraksi ROI</div>
+                    <div class="metric-val" id="resMethod">-</div>
                 </div>
-                <div>
-                    <span class="text-slate-500 block text-xs">Luas Kontur Merah</span>
-                    <strong id="resArea" class="text-base">-</strong>
+
+                <div class="metric-card">
+                    <div class="metric-label">Luas Kontur Objek</div>
+                    <div class="metric-val" id="resArea">-</div>
                 </div>
-                <div>
-                    <span class="text-slate-500 block text-xs">Hasil Kematangan</span>
-                    <strong id="resClass" class="text-lg text-rose-600 uppercase">-</strong>
+
+                <div class="metric-card">
+                    <div class="metric-label">Hasil Kematangan</div>
+                    <div style="margin-top: 2px;">
+                        <span class="ripeness-pill matang" id="resClass">-</span>
+                    </div>
                 </div>
-                <div>
-                    <span class="text-slate-500 block text-xs">Confidence</span>
-                    <strong id="resConf" class="text-lg text-emerald-600">-</strong>
+
+                <div class="metric-card">
+                    <div class="metric-label">Confidence Model</div>
+                    <div class="metric-val" id="resConf" style="color: var(--green-primary);">-</div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="confBar" style="width: 0%;"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-3 rounded-xl shadow-sm border">
-                    <p class="text-xs font-semibold mb-2 text-slate-600">1. Gambar Asli</p>
-                    <img id="imgOrig" class="w-full h-56 object-contain bg-slate-900 rounded" />
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border">
-                    <p class="text-xs font-semibold mb-2 text-slate-600">2. Mask HSV + Morfologi</p>
-                    <img id="imgMask" class="w-full h-56 object-contain bg-slate-900 rounded" />
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border">
-                    <p class="text-xs font-semibold mb-2 text-slate-600">3. Bounding Box (Kuning: Awal, Hijau: ROI)</p>
-                    <img id="imgBbox" class="w-full h-56 object-contain bg-slate-900 rounded" />
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border">
-                    <p class="text-xs font-semibold mb-2 text-slate-600">4. Hasil Crop ROI (Input Model)</p>
-                    <img id="imgCrop" class="w-full h-56 object-contain bg-slate-900 rounded" />
-                </div>
+            <div class="pipeline-header">
+                <h3>Visualisasi Tahapan Pemrosesan Citra</h3>
+                <span>Klik gambar mana saja untuk memperbesar</span>
+            </div>
+
+            <div class="pipeline-grid">
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">1</span>
+                        <span class="stage-title">Gambar Asli</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('imgOrig', '1. Gambar Asli')">
+                        <img id="imgOrig" alt="Gambar Asli" />
+                    </div>
+                    <div class="stage-foot">Citra input mentah sebelum pra-pemrosesan.</div>
+                </article>
+
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">2</span>
+                        <span class="stage-title">Mask HSV + Morfologi</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('imgMask', '2. Mask HSV + Morfologi')">
+                        <img id="imgMask" alt="Mask HSV" />
+                    </div>
+                    <div class="stage-foot">Segmentasi spektrum warna & penghalusan kontur.</div>
+                </article>
+
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">3</span>
+                        <span class="stage-title">Deteksi Bounding Box</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('imgBbox', '3. Deteksi Bounding Box')">
+                        <img id="imgBbox" alt="Bounding Box" />
+                    </div>
+                    <div class="stage-foot">
+                        <span class="legend-dot" style="background: #eab308;"></span>Kontur Awal &nbsp;
+                        <span class="legend-dot" style="background: #22c55e;"></span>Area ROI
+                    </div>
+                </article>
+
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">4</span>
+                        <span class="stage-title">Hasil Crop ROI</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('imgCrop', '4. Hasil Crop ROI (Input MobileNetV2)')">
+                        <img id="imgCrop" alt="Crop ROI" />
+                    </div>
+                    <div class="stage-foot">Potongan fokus buah yang masuk ke model AI.</div>
+                </article>
             </div>
         </section>
     </main>
 
+    <!-- Lightbox Preview -->
+    <div class="lightbox" id="lightboxModal" onclick="closeLightbox(event)">
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <div class="lightbox-bar">
+                <span id="lightboxTitle">Pratinjau Gambar</span>
+                <button type="button" class="lightbox-close" onclick="closeLightbox()">Tutup &times;</button>
+            </div>
+            <div class="lightbox-img-wrap">
+                <img id="lightboxImg" alt="Pratinjau Penuh" />
+            </div>
+        </div>
+    </div>
+
     <script>
+        const fileInput = document.getElementById("imageInput");
+        const dropZone = document.getElementById("dropZone");
+        const fileNameLabel = document.getElementById("fileNameLabel");
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileNameLabel.textContent = fileInput.files[0].name;
+            }
+        });
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileNameLabel.textContent = e.dataTransfer.files[0].name;
+            }
+        });
+
+        function showError(message) {
+            const box = document.getElementById("errorBox");
+            box.textContent = message;
+            box.style.display = "block";
+        }
+
+        function hideError() {
+            document.getElementById("errorBox").style.display = "none";
+        }
+
         async function runRoi(mode) {
+            hideError();
             const formData = new FormData();
+
             if (mode === "upload") {
-                const fileInput = document.getElementById("imageInput");
-                if (!fileInput.files.length) return alert("Pilih gambar terlebih dahulu.");
+                if (!fileInput.files.length) {
+                    showError("Silakan pilih atau seret file gambar stroberi terlebih dahulu.");
+                    return;
+                }
                 formData.append("file", fileInput.files[0]);
             } else {
                 formData.append("source", "latest_esp32");
             }
 
-            const res = await fetch("/api/roi/process", { method: "POST", body: formData });
-            const json = await res.json();
-            if (!res.ok) return alert(json.error || "Gagal memproses ROI.");
+            const btnUpload = document.getElementById("btnUpload");
+            const btnEsp = document.getElementById("btnEsp");
+            const loader = document.getElementById("loaderBox");
+            const resultBox = document.getElementById("resultBox");
 
-            const d = json.data;
-            document.getElementById("resultBox").classList.remove("hidden");
-            document.getElementById("resMethod").textContent = d.method;
-            document.getElementById("resArea").textContent = d.contour_area + " px";
-            document.getElementById("resClass").textContent = d.kelas;
-            document.getElementById("resConf").textContent = d.confidence_percent + "%";
+            btnUpload.disabled = true;
+            btnEsp.disabled = true;
+            loader.style.display = "block";
+            resultBox.classList.remove("visible");
 
-            document.getElementById("imgOrig").src = d.images.original;
-            document.getElementById("imgMask").src = d.images.mask;
-            document.getElementById("imgBbox").src = d.images.bbox;
-            document.getElementById("imgCrop").src = d.images.crop;
+            try {
+                const res = await fetch("/api/roi/process", { method: "POST", body: formData });
+                if (res.status === 401) {
+                    window.location.href = "/login";
+                    return;
+                }
+                const json = await res.json();
+                if (!res.ok) {
+                    showError(json.error || "Gagal memproses ROI pada gambar tersebut.");
+                    return;
+                }
+
+                const d = json.data;
+                document.getElementById("resMethod").textContent = d.method || "-";
+                document.getElementById("resArea").textContent = (d.contour_area ?? 0) + " px";
+
+                const kelasText = String(d.kelas || "-");
+                const pill = document.getElementById("resClass");
+                pill.textContent = kelasText;
+                pill.className = "ripeness-pill";
+                const lower = kelasText.toLowerCase();
+                if (lower.includes("mentah")) {
+                    pill.classList.add("mentah");
+                } else if (lower.includes("medium") || lower.includes("setengah")) {
+                    pill.classList.add("medium");
+                } else {
+                    pill.classList.add("matang");
+                }
+
+                const conf = Number(d.confidence_percent ?? 0);
+                document.getElementById("resConf").textContent = conf + "%";
+                document.getElementById("confBar").style.width = Math.min(Math.max(conf, 0), 100) + "%";
+
+                document.getElementById("imgOrig").src = d.images.original;
+                document.getElementById("imgMask").src = d.images.mask;
+                document.getElementById("imgBbox").src = d.images.bbox;
+                document.getElementById("imgCrop").src = d.images.crop;
+
+                resultBox.classList.add("visible");
+            } catch (err) {
+                showError("Gagal terhubung ke server Flask. Periksa koneksi jaringan Anda.");
+            } finally {
+                btnUpload.disabled = false;
+                btnEsp.disabled = false;
+                loader.style.display = "none";
+            }
         }
+
+        function openLightbox(imgId, title) {
+            const src = document.getElementById(imgId).src;
+            if (!src) return;
+            document.getElementById("lightboxTitle").textContent = title;
+            document.getElementById("lightboxImg").src = src;
+            document.getElementById("lightboxModal").classList.add("open");
+        }
+
+        function closeLightbox() {
+            document.getElementById("lightboxModal").classList.remove("open");
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeLightbox();
+        });
     </script>
 </body>
 

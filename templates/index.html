@@ -1,785 +1,1001 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pantau Kebun Stroberi</title>
-
-  <!-- Google Fonts: Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet">
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
+  <title>Manajemen Akun User — Strawberry Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <style>
+    :root {
+      --bg-page: #f2f6f3;
+      --bg-card: #ffffff;
+      --green-dark: #1b4332;
+      --green-primary: #2d6a4f;
+      --green-hover: #245740;
+      --green-soft: #e8f3ed;
+      --berry-accent: #d93848;
+      --berry-soft: #fdf2f3;
+      --amber-bg: #fef3c7;
+      --amber-text: #b45309;
+      --text-main: #18261f;
+      --text-muted: #5c7066;
+      --border-color: #d6e2dc;
+      --shadow-sm: 0 4px 20px -6px rgba(27, 67, 50, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #F8FAFC;
-      color: #1E293B;
-      -webkit-font-smoothing: antialiased;
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--green-dark);
+      color: #ffffff;
+      padding: 0 24px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: 0 4px 18px rgba(27, 67, 50, 0.16);
+    }
+
+    .nav-inner {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .nav-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-subtitle {
+      font-size: 11.5px;
+      color: #b7d4c6;
+      display: block;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: #d8ebe1;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .nav-link.active {
+      background: #ffffff;
+      color: var(--green-dark);
+    }
+
+    .btn-logout {
+      text-decoration: none;
+      background: rgba(217, 56, 72, 0.18);
+      border: 1px solid rgba(255, 165, 174, 0.35);
+      color: #ffd6da;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 13px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-logout:hover {
+      background: var(--berry-accent);
+      border-color: var(--berry-accent);
+      color: #ffffff;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 24px 48px;
+    }
+
+    .page-header {
+      margin-bottom: 22px;
+    }
+
+    .page-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--green-dark);
+      letter-spacing: -0.02em;
+    }
+
+    .page-header p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Stats Row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-icon.green {
+      background: var(--green-soft);
+      color: var(--green-primary);
+    }
+
+    .stat-icon.berry {
+      background: var(--berry-soft);
+      color: var(--berry-accent);
+    }
+
+    .stat-icon.amber {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 2px;
+    }
+
+    /* Content Grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 14px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 11px;
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--text-main);
+      background: #fafcfb;
+      transition: all 0.2s ease;
+    }
+
+    .form-input.has-toggle {
+      padding-right: 40px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--green-primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3.5px rgba(45, 106, 79, 0.12);
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      border-radius: 6px;
+    }
+
+    .toggle-pw:hover {
+      background: var(--green-soft);
+      color: var(--green-dark);
+    }
+
+    .btn-primary {
+      width: 100%;
+      height: 44px;
+      margin-top: 6px;
+      border: none;
+      border-radius: 11px;
+      background: var(--green-primary);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--green-hover);
+    }
+
+    .alert-box {
+      display: none;
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: 11px;
+      font-size: 12.5px;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .alert-box.success {
+      display: block;
+      background: var(--green-soft);
+      border: 1px solid #b7e4c7;
+      color: var(--green-dark);
+    }
+
+    .alert-box.error {
+      display: block;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+    }
+
+    /* Table Toolbar & Table */
+    .table-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-input {
+      height: 38px;
+      width: 220px;
+      padding: 0 12px 0 34px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      background: #fafcfb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%235c7066' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 11px center;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--green-primary);
+      background-color: #ffffff;
+    }
+
+    .btn-secondary {
+      height: 38px;
+      padding: 0 13px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--green-soft);
+      border-color: var(--green-primary);
+      color: var(--green-dark);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e6eee9;
+      border-radius: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    thead th {
+      background: #f6faf7;
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tbody td {
+      padding: 13px 14px;
+      border-bottom: 1px solid #eef4f0;
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #fafcfb;
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--green-soft);
+      color: var(--green-dark);
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .user-id {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .badge.active {
+      background: var(--green-soft);
+      color: var(--green-primary);
+    }
+
+    .badge.pending {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .btn-delete {
+      background: var(--berry-soft);
+      color: var(--berry-accent);
+      border: 1px solid transparent;
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-delete:hover {
+      background: var(--berry-accent);
+      color: #ffffff;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 31, 24, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 18px;
+      max-width: 380px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+    }
+
+    .modal-box h3 {
+      font-size: 17px;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .modal-box p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-danger {
+      height: 38px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      background: var(--berry-accent);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-subtitle {
+        display: none;
+      }
     }
   </style>
 </head>
 
-<body class="min-h-screen flex flex-col">
+<body>
+  <header class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+          </svg>
+        </div>
+        <div>
+          <span class="nav-title">Strawberry Care</span>
+          <span class="nav-subtitle">Admin Control Panel</span>
+        </div>
+      </a>
 
-  <!-- Input File Tersembunyi -->
-  <input type="file" id="input-foto-semua" accept="image/*" class="hidden" />
-  <input type="file" id="input-foto-daun" accept="image/*" class="hidden" />
+      <nav class="nav-actions">
+        <a href="/" class="nav-link active">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+          <span>Manajemen Akun</span>
+        </a>
+        <a href="/roi-lab" class="nav-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          <span>Lab Proses ROI</span>
+        </a>
+        <a href="/logout" class="btn-logout" title="Keluar dari sesi admin">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Keluar</span>
+        </a>
+      </nav>
+    </div>
+  </header>
 
-  <!-- Kontainer Utama -->
-  <div id="app" class="flex-1 flex flex-col"></div>
+  <main class="container">
+    <div class="page-header">
+      <h2>Manajemen Akun Aplikasi Mobile</h2>
+      <p>Daftarkan akun petani atau operator baru agar dapat langsung masuk ke aplikasi Flutter tanpa menunggu OTP.</p>
+    </div>
+
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <div>
+          <div class="stat-label">Total Akun Terdaftar</div>
+          <div class="stat-value" id="statTotal">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon berry">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+        </div>
+        <div>
+          <div class="stat-label">Akun Aktif (Siap Login)</div>
+          <div class="stat-value" id="statActive">0</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </div>
+        <div>
+          <div class="stat-label">Menunggu Verifikasi OTP</div>
+          <div class="stat-value" id="statPending">0</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="main-grid">
+      <!-- Form Buat Akun -->
+      <section class="card">
+        <h3 class="card-title">Daftarkan Akun Baru</h3>
+        <p class="card-desc">Akun yang dibuat melalui panel ini otomatis aktif dan terverifikasi.</p>
+
+        <form id="userForm">
+          <div class="form-group">
+            <label for="nama">Nama Lengkap</label>
+            <input type="text" id="nama" class="form-input" placeholder="Contoh: Budi Santoso" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Alamat Email</label>
+            <input type="email" id="email" class="form-input" placeholder="budi@email.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Nomor HP / WhatsApp</label>
+            <input type="text" id="phone" class="form-input" placeholder="081234567890" required />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+              <input type="password" id="password" class="form-input has-toggle"
+                placeholder="Min. 8 karakter (huruf & angka)" required />
+              <button type="button" class="toggle-pw" id="togglePw" aria-label="Lihat password">
+                <svg id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Buat Akun User</span>
+          </button>
+        </form>
+
+        <div id="statusMsg" class="alert-box" role="alert"></div>
+      </section>
+
+      <!-- Tabel Daftar Akun -->
+      <section class="card">
+        <div class="table-header">
+          <div>
+            <h3 class="card-title">Daftar Akun Terdaftar</h3>
+            <p class="card-desc" style="margin-bottom: 0;">Kelola pengguna yang memiliki akses ke aplikasi mobile.</p>
+          </div>
+          <div class="toolbar-actions">
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari nama, email, HP..." />
+            <button type="button" onclick="loadUsers()" class="btn-secondary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pengguna</th>
+                <th>Kontak</th>
+                <th>Status</th>
+                <th>Dibuat</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 28px; color: var(--text-muted);">
+                  Memuat data akun...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal Konfirmasi Hapus -->
+  <div class="modal-backdrop" id="deleteModal">
+    <div class="modal-box">
+      <h3>Hapus Akun Pengguna?</h3>
+      <p id="deleteModalText">Akun ini akan dihapus permanen dan tidak dapat lagi masuk ke aplikasi mobile.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Batal</button>
+        <button type="button" class="btn-danger" id="confirmDeleteBtn">Ya, Hapus Akun</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-      (function () {
-        const API = {
-          predictAll: '/predict',
-          predictLeaf: '/api/predict-disease',
-          latest: '/api/latest',
-          capture: '/api/capture',
-          pollMs: 3000
-        };
+    let allUsers = [];
+    let pendingDeleteId = null;
 
-        const state = {
-          tab: 'utama', // 'utama' | 'riwayat'
-          connected: false,
-          loadingCapture: false,
-          loadingAll: false,
-          loadingLeaf: false,
-          lockLeaf: false,
-          notice: null,
-          noticeType: 'success',
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text ?? "";
+      return div.innerHTML;
+    }
 
-          data: {
-            waktu: 'Belum ada pemeriksaan',
-            sumber: 'Kamera Kebun',
-            fotoUrl: '',
-            // Hasil Buah
-            buahLabel: 'Belum Dicek',
-            buahKategori: 'pending', // 'matang' | 'medium' | 'mentah' | 'unknown' | 'pending'
-            buahPersen: 0,
-            buahPesan: 'Silakan ambil foto dari kamera atau pilih foto dari galeri untuk mengecek kematangan buah.',
-            // Hasil Daun
-            daunLabel: 'Belum Dicek',
-            daunStatus: 'pending', // 'sehat' | 'sakit' | 'pending'
-            daunPersen: 0,
-            daunSaran: 'Hasil pemeriksaan kesehatan daun dan saran perawatannya akan muncul di sini.',
-            // Kondisi Kebun
-            suhu: null,
-            kelembapanTanah: null,
-            kipas: 'MATI',
-            pompa: 'MATI'
-          },
+    function getInitials(name) {
+      return (name || "U")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(w => w[0].toUpperCase())
+        .join("");
+    }
 
-          riwayat: []
-        };
+    function updateStats(users) {
+      const total = users.length;
+      const active = users.filter(u => Number(u.is_verified) === 1).length;
+      document.getElementById("statTotal").textContent = total;
+      document.getElementById("statActive").textContent = active;
+      document.getElementById("statPending").textContent = total - active;
+    }
 
-        // Terjemahan nama penyakit ke bahasa sehari-hari yang mudah dipahami
-        function terjemahkanPenyakit(namaAsli) {
-          const raw = String(namaAsli || '').trim();
-          const lower = raw.toLowerCase();
+    function renderUsers(users) {
+      const tbody = document.getElementById("usersTableBody");
+      tbody.innerHTML = "";
 
-          if (!raw || raw === '-' || lower.includes('menunggu') || lower.includes('belum')) {
-            return {
-              judul: 'Belum Dicek',
-              status: 'pending',
-              saran: 'Unggah foto daun atau ambil gambar dari kamera untuk mengecek apakah daun sehat atau terkena penyakit.'
-            };
-          }
-          if (lower.includes('sehat') || lower.includes('healthy') || lower.includes('normal')) {
-            return {
-              judul: 'Daun Sehat',
-              status: 'sehat',
-              saran: 'Tanaman dalam kondisi baik. Lanjutkan penyiraman dan perawatan seperti biasa.'
-            };
-          }
-          if (lower.includes('angular')) {
-            return {
-              judul: 'Bercak Daun Bersudut',
-              status: 'sakit',
-              saran: 'Daun terkena bercak bakteri. Hindari menyiram langsung ke arah daun dan buang daun yang berbintik.'
-            };
-          }
-          if (lower.includes('powdery') && lower.includes('leaf')) {
-            return {
-              judul: 'Jamur Tepung pada Daun',
-              status: 'sakit',
-              saran: 'Terlihat lapisan putih seperti tepung. Nyalakan kipas agar udara mengalir dan pangkas daun yang berjamur.'
-            };
-          }
-          if (lower.includes('powdery') && lower.includes('fruit')) {
-            return {
-              judul: 'Jamur Tepung pada Buah',
-              status: 'sakit',
-              saran: 'Buah terkena jamur putih. Pisahkan buah yang berjamur agar tidak menular ke buah lainnya.'
-            };
-          }
-          if (lower.includes('gray_mold') || lower.includes('gray mold')) {
-            return {
-              judul: 'Busuk Abu-Abu',
-              status: 'sakit',
-              saran: 'Disebabkan udara terlalu lembap. Segera buang bagian yang membusuk dan kurangi kelembapan sekitar tanaman.'
-            };
-          }
-          if (lower.includes('leaf_spot') || lower.includes('leaf spot')) {
-            return {
-              judul: 'Bercak Daun Cokelat',
-              status: 'sakit',
-              saran: 'Petik daun yang memiliki bintik cokelat/ungu agar tidak menyebar ke daun muda.'
-            };
-          }
-          if (lower.includes('anthracnose')) {
-            return {
-              judul: 'Busuk Antraknosa',
-              status: 'sakit',
-              saran: 'Terdapat bercak cekung gelap. Jauhkan tanaman yang sakit dan hindari percikan air antar pot.'
-            };
-          }
-          if (lower.includes('blossom')) {
-            return {
-              judul: 'Hawar Bunga',
-              status: 'sakit',
-              saran: 'Bunga tampak layu kecokelatan. Bersihkan bunga yang kering agar tidak mengganggu pertumbuhan buah.'
-            };
-          }
+      if (!users || users.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 32px; color: var(--text-muted);">
+              Tidak ada data akun pengguna yang ditemukan.
+            </td>
+          </tr>`;
+        return;
+      }
 
-          return {
-            judul: raw.replace(/_/g, ' '),
-            status: 'sakit',
-            saran: 'Terindikasi gangguan pada tanaman. Periksa kondisi daun dan atur sirkulasi udara serta penyiraman.'
-          };
+      users.forEach(u => {
+        const isVerified = Number(u.is_verified) === 1;
+        const badge = isVerified
+          ? `<span class="badge active">&#9679; Aktif</span>`
+          : `<span class="badge pending">&#9679; Belum OTP</span>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <div class="user-cell">
+              <div class="avatar">${escapeHtml(getInitials(u.nama))}</div>
+              <div>
+                <div class="user-name">${escapeHtml(u.nama)}</div>
+                <div class="user-id">ID #${escapeHtml(String(u.id))}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight: 500;">${escapeHtml(u.email)}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">${escapeHtml(u.phone)}</div>
+          </td>
+          <td>${badge}</td>
+          <td style="font-size: 12.5px; color: var(--text-muted);">${escapeHtml(u.created_at || "-")}</td>
+          <td style="text-align: right;">
+            <button type="button" class="btn-delete" onclick="openDeleteModal(${Number(u.id)}, '${escapeHtml(u.nama).replace(/'/g, "\\'")}')">
+              Hapus
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await fetch("/api/web/users");
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return;
         }
+        const json = await res.json();
+        allUsers = json.users || [];
+        updateStats(allUsers);
+        applySearchFilter();
+      } catch (err) {
+        document.getElementById("usersTableBody").innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 28px; color: var(--berry-accent);">
+              Gagal memuat data dari server. Pastikan MySQL & Flask aktif.
+            </td>
+          </tr>`;
+      }
+    }
 
-        // Terjemahan status buah ke bahasa sehari-hari
-        function terjemahkanBuah(kelasAsli, persen) {
-          const raw = String(kelasAsli || '').trim();
-          const upper = raw.toUpperCase();
+    function applySearchFilter() {
+      const q = document.getElementById("searchInput").value.trim().toLowerCase();
+      if (!q) {
+        renderUsers(allUsers);
+        return;
+      }
+      const filtered = allUsers.filter(u =>
+        (u.nama || "").toLowerCase().includes(q) ||
+        (u.email || "").toLowerCase().includes(q) ||
+        (u.phone || "").toLowerCase().includes(q)
+      );
+      renderUsers(filtered);
+    }
 
-          if (!raw || raw === '-' || upper.includes('MENUNGGU') || upper.includes('KHUSUS DAUN')) {
-            return {
-              judul: upper.includes('KHUSUS DAUN') ? 'Tidak Dicek (Mode Daun)' : 'Belum Dicek',
-              kategori: 'pending',
-              pesan: 'Gunakan tombol "Cek Buah & Daun" untuk melihat tingkat kematangan buah stroberi.'
-            };
-          }
-          if (upper.includes('TIDAK DIKETAHUI') || upper.includes('UNKNOWN')) {
-            return {
-              judul: 'Buah Tidak Terlihat',
-              kategori: 'unknown',
-              pesan: 'Kamera tidak menemukan buah stroberi pada foto ini (kemungkinan foto hanya berisi daun).'
-            };
-          }
-          if (upper.includes('MATANG') && !upper.includes('SETENGAH')) {
-            return {
-              judul: 'Sudah Matang (Siap Panen)',
-              kategori: 'matang',
-              pesan: 'Warna merah sudah merata. Buah stroberi sudah manis dan siap dipetik.'
-            };
-          }
-          if (upper.includes('MEDIUM') || upper.includes('SETENGAH')) {
-            return {
-              judul: 'Setengah Matang',
-              kategori: 'medium',
-              pesan: 'Buah mulai memerah. Tunggu sekitar 2–3 hari lagi agar matang sempurna.'
-            };
-          }
-          if (upper.includes('MENTAH')) {
-            return {
-              judul: 'Masih Mentah',
-              kategori: 'mentah',
-              pesan: 'Buah masih hijau/putih dan belum siap dipetik. Biarkan tumbuh lebih lama.'
-            };
-          }
+    document.getElementById("searchInput").addEventListener("input", applySearchFilter);
 
-          return {
-            judul: raw,
-            kategori: 'medium',
-            pesan: `Hasil pemeriksaan menunjukkan kondisi buah: ${raw} (Keyakinan ${persen}%).`
-          };
+    // Toggle Password
+    const pwInput = document.getElementById("password");
+    const eyeIcon = document.getElementById("eyeIcon");
+    document.getElementById("togglePw").addEventListener("click", () => {
+      const hidden = pwInput.type === "password";
+      pwInput.type = hidden ? "text" : "password";
+      eyeIcon.innerHTML = hidden
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    });
+
+    // Submit Form Buat Akun
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("statusMsg");
+      const btn = document.getElementById("submitBtn");
+      const btnText = btn.querySelector("span");
+
+      btn.disabled = true;
+      btnText.textContent = "Menyimpan...";
+      msg.className = "alert-box";
+
+      try {
+        const res = await fetch("/api/web/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nama: document.getElementById("nama").value,
+            email: document.getElementById("email").value,
+            phone: document.getElementById("phone").value,
+            password: document.getElementById("password").value,
+          }),
+        });
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return;
         }
-
-        function rapikanUrlGambar(val) {
-          if (!val || typeof val !== 'string') return '';
-          if (val.startsWith('http') || val.startsWith('data:image') || val.startsWith('/')) return val;
-          return '/' + val;
+        const json = await res.json();
+        if (res.ok) {
+          msg.className = "alert-box success";
+          msg.textContent = json.message;
+          e.target.reset();
+          loadUsers();
+        } else {
+          msg.className = "alert-box error";
+          msg.textContent = json.error || "Gagal membuat akun.";
         }
-
-        function olahDataServer(raw, sumberDefault = 'Kamera Kebun') {
-          const src = raw?.latest || raw?.result || raw || {};
-          const sensor = raw?.sensor || src?.sensor || {};
-
-          const buahPersen = Number(parseFloat(src.confidence_percent ?? src.confidence ?? 0).toFixed(0));
-          const infoBuah = terjemahkanBuah(src.kelas, buahPersen);
-
-          const daunPersen = Number(parseFloat(src.penyakit_confidence ?? src.disease_confidence ?? 0).toFixed(0));
-          const infoDaun = terjemahkanPenyakit(src.penyakit_daun);
-
-          const suhuVal = parseFloat(sensor.suhu);
-          const tanahVal = parseFloat(sensor.kelembapan_tanah);
-
-          const kipasRaw = String(sensor.kipas || '').toUpperCase();
-          const pompaRaw = String(sensor.pompa || '').toUpperCase();
-
-          return {
-            waktu: src.waktu || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-            sumber: sumberDefault,
-            fotoUrl: rapikanUrlGambar(src.image_url) || state.data.fotoUrl,
-            buahLabel: infoBuah.judul,
-            buahKategori: infoBuah.kategori,
-            buahPersen: isNaN(buahPersen) ? 0 : buahPersen,
-            buahPesan: infoBuah.pesan,
-            daunLabel: infoDaun.judul,
-            daunStatus: infoDaun.status,
-            daunPersen: isNaN(daunPersen) ? 0 : daunPersen,
-            daunSaran: infoDaun.saran,
-            suhu: !isNaN(suhuVal) && suhuVal > 0 ? suhuVal.toFixed(1) : state.data.suhu,
-            kelembapanTanah: !isNaN(tanahVal) && tanahVal > 0 ? Math.round(tanahVal) : state.data.kelembapanTanah,
-            kipas: kipasRaw.includes('ON') ? 'MENYALA' : (kipasRaw ? 'MATI' : state.data.kipas),
-            pompa: pompaRaw.includes('ON') ? 'MENYALA' : (pompaRaw ? 'MATI' : state.data.pompa)
-          };
-        }
-
-        async function ambilDataTerbaru() {
-          try {
-            const res = await fetch(API.latest, { cache: 'no-store' });
-            if (!res.ok) throw new Error();
-            const json = await res.json();
-
-            state.connected = true;
-            const hasil = olahDataServer(json, 'Kamera Kebun');
-
-            if (state.lockLeaf) {
-              hasil.daunLabel = state.data.daunLabel;
-              hasil.daunStatus = state.data.daunStatus;
-              hasil.daunPersen = state.data.daunPersen;
-              hasil.daunSaran = state.data.daunSaran;
-            }
-
-            state.data = hasil;
-
-            if (hasil.buahKategori !== 'pending') {
-              const sudahAda = state.riwayat.some(r => r.waktu === hasil.waktu && r.buahLabel === hasil.buahLabel);
-              if (!sudahAda) {
-                state.riwayat.unshift({ ...hasil });
-                if (state.riwayat.length > 30) state.riwayat.pop();
-              }
-            }
-            render();
-          } catch {
-            state.connected = false;
-            render();
-          }
-        }
-
-        async function fotoDariKamera() {
-          if (state.loadingCapture) return;
-          state.loadingCapture = true;
-          state.lockLeaf = false;
-          tampilkanPesan('Meminta kamera kebun mengambil foto terbaru...', 'info');
-          render();
-
-          try {
-            let res = await fetch(API.capture, { method: 'POST' });
-            if (res.status === 405) res = await fetch(API.capture);
-            if (!res.ok) throw new Error('Kamera kebun belum merespons');
-
-            tampilkanPesan('Foto berhasil diambil! Sedang memeriksa kondisi tanaman...', 'success');
-            setTimeout(ambilDataTerbaru, 1200);
-          } catch (err) {
-            tampilkanPesan('Kamera kebun belum terhubung. Anda tetap bisa mengecek lewat tombol Pilih Foto.', 'error');
-          } finally {
-            state.loadingCapture = false;
-            render();
-          }
-        }
-
-        async function kirimFotoSemua(file) {
-          if (!file || state.loadingAll) return;
-          state.loadingAll = true;
-          state.lockLeaf = false;
-          const preview = URL.createObjectURL(file);
-          state.data.fotoUrl = preview;
-          tampilkanPesan('Sedang memeriksa buah dan daun dari foto Anda...', 'info');
-          render();
-
-          try {
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('image', file);
-
-            const res = await fetch(API.predictAll, { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Gagal memproses foto');
-            const json = await res.json();
-
-            state.connected = true;
-            const hasil = olahDataServer(json, 'Foto Galeri');
-            if (!hasil.fotoUrl) hasil.fotoUrl = preview;
-
-            state.data = hasil;
-            state.riwayat.unshift({ ...hasil });
-            if (state.riwayat.length > 30) state.riwayat.pop();
-
-            tampilkanPesan(`Pemeriksaan selesai! Buah: ${hasil.buahLabel} · Daun: ${hasil.daunLabel}`, 'success');
-          } catch {
-            tampilkanPesan('Gagal memeriksa foto. Pastikan program server Python sedang berjalan.', 'error');
-          } finally {
-            state.loadingAll = false;
-            render();
-          }
-        }
-
-        async function kirimFotoDaunSaja(file) {
-          if (!file || state.loadingLeaf) return;
-          state.loadingLeaf = true;
-          const preview = URL.createObjectURL(file);
-          state.data.fotoUrl = preview;
-          tampilkanPesan('Sedang mengecek kesehatan daun dari foto Anda...', 'info');
-          render();
-
-          try {
-            const fd = new FormData();
-            fd.append('file', file);
-            fd.append('image', file);
-
-            const res = await fetch(API.predictLeaf, { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Gagal memproses foto daun');
-            const json = await res.json();
-
-            state.connected = true;
-            state.lockLeaf = true;
-
-            const persen = Number(parseFloat(json.confidence || 0).toFixed(0));
-            const infoDaun = terjemahkanPenyakit(json.penyakit_daun);
-
-            state.data = {
-              ...state.data,
-              waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-              sumber: 'Foto Daun',
-              fotoUrl: preview,
-              buahLabel: 'Tidak Dicek (Mode Daun)',
-              buahKategori: 'pending',
-              buahPersen: 0,
-              buahPesan: 'Anda memilih mode cek daun saja. Gunakan tombol "Cek Buah & Daun" untuk mengecek buah.',
-              daunLabel: infoDaun.judul,
-              daunStatus: infoDaun.status,
-              daunPersen: persen,
-              daunSaran: infoDaun.saran
-            };
-
-            state.riwayat.unshift({ ...state.data });
-            if (state.riwayat.length > 30) state.riwayat.pop();
-
-            tampilkanPesan(`Hasil cek daun: ${infoDaun.judul} (Keyakinan ${persen}%)`, 'success');
-          } catch {
-            tampilkanPesan('Gagal memeriksa foto daun. Pastikan program server Python sedang berjalan.', 'error');
-          } finally {
-            state.loadingLeaf = false;
-            render();
-          }
-        }
-
-        function tampilkanPesan(teks, tipe = 'success') {
-          state.notice = teks;
-          state.noticeType = tipe;
-          render();
-          if (state.timer) clearTimeout(state.timer);
-          state.timer = setTimeout(() => {
-            state.notice = null;
-            render();
-          }, 5000);
-        }
-
-        function unduhLaporan() {
-          if (state.riwayat.length === 0) {
-            tampilkanPesan('Belum ada catatan riwayat yang bisa diunduh.', 'info');
-            return;
-          }
-          const header = ['Waktu', 'Kondisi Buah', 'Keyakinan Buah (%)', 'Kondisi Daun', 'Keyakinan Daun (%)', 'Suhu (C)', 'Kelembapan Tanah (%)'];
-          const baris = state.riwayat.map(r => [
-            `"${r.waktu}"`,
-            `"${r.buahLabel}"`,
-            r.buahPersen,
-            `"${r.daunLabel}"`,
-            r.daunPersen,
-            r.suhu ?? '-',
-            r.kelembapanTanah ?? '-'
-          ].join(','));
-
-          const csv = 'data:text/csv;charset=utf-8,' + [header.join(','), ...baris].join('\n');
-          const a = document.createElement('a');
-          a.href = encodeURI(csv);
-          a.download = `Catatan_Kebun_Stroberi_${new Date().toISOString().slice(0, 10)}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          tampilkanPesan('Catatan riwayat berhasil diunduh.', 'success');
-        }
-
-        function render() {
-          const app = document.getElementById('app');
-          if (!app) return;
-          const D = state.data;
-
-          // Warna Kartu Buah
-          const gayaBuah = {
-            matang: { box: 'bg-rose-50 border-rose-200', badge: 'bg-rose-600 text-white', teks: 'text-rose-700', ikon: 'check-circle-2' },
-            medium: { box: 'bg-amber-50 border-amber-200', badge: 'bg-amber-500 text-white', teks: 'text-amber-800', ikon: 'clock' },
-            mentah: { box: 'bg-emerald-50 border-emerald-200', badge: 'bg-emerald-600 text-white', teks: 'text-emerald-800', ikon: 'sprout' },
-            unknown: { box: 'bg-slate-100 border-slate-200', badge: 'bg-slate-500 text-white', teks: 'text-slate-700', ikon: 'help-circle' },
-            pending: { box: 'bg-slate-50 border-slate-200', badge: 'bg-slate-200 text-slate-700', teks: 'text-slate-700', ikon: 'apple' }
-          }[D.buahKategori];
-
-          // Warna Kartu Daun
-          const gayaDaun = {
-            sehat: { box: 'bg-emerald-50 border-emerald-200', badge: 'bg-emerald-600 text-white', teks: 'text-emerald-800', ikon: 'shield-check' },
-            sakit: { box: 'bg-amber-50 border-amber-300', badge: 'bg-amber-600 text-white', teks: 'text-amber-900', ikon: 'alert-triangle' },
-            pending: { box: 'bg-slate-50 border-slate-200', badge: 'bg-slate-200 text-slate-700', teks: 'text-slate-700', ikon: 'leaf' }
-          }[D.daunStatus];
-
-          app.innerHTML = `
-                    <!-- HEADER SEDERHANA -->
-                    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-                        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-sm">
-                                    <i data-lucide="sprout" class="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <h1 class="font-bold text-base sm:text-lg text-slate-900 leading-tight">Pantau Kebun Stroberi</h1>
-                                    <p class="text-xs text-slate-500">Cek Kematangan Buah & Kesehatan Daun</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                <!-- Status Koneksi -->
-                                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${state.connected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-                                    <span class="w-2 h-2 rounded-full ${state.connected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}"></span>
-                                    <span>${state.connected ? 'Sistem Terhubung' : 'Menghubungkan...'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- MENU TAB SEDERHANA (2 TAB SAJA) -->
-                        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 pb-2.5">
-                            <button id="tab-utama" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer flex items-center gap-2 ${state.tab === 'utama' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">
-                                <i data-lucide="camera" class="w-4 h-4"></i>
-                                <span>Pemeriksaan Tanaman</span>
-                            </button>
-                            <button id="tab-riwayat" class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer flex items-center gap-2 ${state.tab === 'riwayat' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}">
-                                <i data-lucide="history" class="w-4 h-4"></i>
-                                <span>Catatan Riwayat (${state.riwayat.length})</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    <!-- KONTEN UTAMA -->
-                    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-                        <!-- NOTIFIKASI RAMAH -->
-                        ${state.notice ? `
-                            <div class="p-4 rounded-xl border text-sm font-medium flex items-center justify-between shadow-xs ${state.noticeType === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' :
-                state.noticeType === 'info' ? 'bg-sky-50 border-sky-200 text-sky-800' :
-                  'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }">
-                                <div class="flex items-center gap-2.5">
-                                    <i data-lucide="${state.noticeType === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5 shrink-0"></i>
-                                    <span>${state.notice}</span>
-                                </div>
-                                <button id="btn-tutup-pesan" class="text-xs font-bold underline ml-4 cursor-pointer">Tutup</button>
-                            </div>
-                        ` : ''}
-
-                        ${state.tab === 'utama' ? `
-                            <!-- BAGIAN 1: FOTO & TOMBOL PEMERIKSAAN -->
-                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-                                <!-- KOTAK FOTO TANAMAN (7 KOLOM) -->
-                                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-                                        <div>
-                                            <h2 class="font-bold text-slate-900 text-base">Foto Tanaman</h2>
-                                            <p class="text-xs text-slate-500">Terakhir diperbarui: ${D.waktu} (${D.sumber})</p>
-                                        </div>
-                                        <button id="btn-segarkan" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer" title="Segarkan Data">
-                                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-
-                                    <!-- Area Preview Foto -->
-                                    <div class="aspect-[16/10] bg-slate-900 flex items-center justify-center overflow-hidden relative">
-                                        ${D.fotoUrl ? `
-                                            <img src="${D.fotoUrl}" alt="Foto Tanaman Stroberi" class="w-full h-full object-contain" />
-                                        ` : `
-                                            <div class="text-center p-8 text-slate-400 max-w-sm space-y-3">
-                                                <div class="w-14 h-14 rounded-full bg-slate-800 mx-auto flex items-center justify-center text-slate-300">
-                                                    <i data-lucide="image" class="w-7 h-7"></i>
-                                                </div>
-                                                <p class="text-sm font-semibold text-slate-200">Belum Ada Foto Tanaman</p>
-                                                <p class="text-xs text-slate-400 leading-relaxed">
-                                                    Pilih salah satu tombol di bawah ini untuk mengambil foto dari kamera kebun atau mengunggah foto dari HP/laptop Anda.
-                                                </p>
-                                            </div>
-                                        `}
-                                    </div>
-
-                                    <!-- 3 TOMBOL AKSI UTAMA YANG JELAS -->
-                                    <div class="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <button id="btn-kamera" ${state.loadingCapture ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="camera" class="w-4 h-4 text-rose-400"></i>
-                                            <span>${state.loadingCapture ? 'Memotret...' : 'Foto Kamera Kebun'}</span>
-                                        </button>
-
-                                        <button id="btn-pilih-semua" ${state.loadingAll ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="upload" class="w-4 h-4"></i>
-                                            <span>${state.loadingAll ? 'Memeriksa...' : 'Cek Buah & Daun'}</span>
-                                        </button>
-
-                                        <button id="btn-pilih-daun" ${state.loadingLeaf ? 'disabled' : ''} class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs">
-                                            <i data-lucide="leaf" class="w-4 h-4"></i>
-                                            <span>${state.loadingLeaf ? 'Memeriksa...' : 'Cek Daun Saja'}</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- HASIL PEMERIKSAAN (5 KOLOM) -->
-                                <div class="lg:col-span-5 space-y-5">
-
-                                    <!-- KARTU 1: KONDISI BUAH -->
-                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2.5">
-                                                <div class="w-9 h-9 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                                                    <i data-lucide="cherry" class="w-5 h-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h3 class="font-bold text-slate-900 text-base">Kondisi Buah</h3>
-                                                    <p class="text-xs text-slate-500">Tingkat kematangan stroberi</p>
-                                                </div>
-                                            </div>
-                                            ${D.buahPersen > 0 ? `
-                                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${gayaBuah.badge}">
-                                                    Yakin ${D.buahPersen}%
-                                                </span>
-                                            ` : ''}
-                                        </div>
-
-                                        <div class="p-4 rounded-xl border ${gayaBuah.box}">
-                                            <div class="text-xl font-extrabold ${gayaBuah.teks}">
-                                                ${D.buahLabel}
-                                            </div>
-                                            <p class="text-sm text-slate-700 mt-1.5 leading-relaxed">
-                                                ${D.buahPesan}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <!-- KARTU 2: KESEHATAN DAUN -->
-                                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2.5">
-                                                <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                                                    <i data-lucide="leaf" class="w-5 h-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h3 class="font-bold text-slate-900 text-base">Kesehatan Daun</h3>
-                                                    <p class="text-xs text-slate-500">Deteksi bercak & jamur tanaman</p>
-                                                </div>
-                                            </div>
-                                            ${D.daunPersen > 0 ? `
-                                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${gayaDaun.badge}">
-                                                    Yakin ${D.daunPersen}%
-                                                </span>
-                                            ` : ''}
-                                        </div>
-
-                                        <div class="p-4 rounded-xl border ${gayaDaun.box}">
-                                            <div class="text-xl font-extrabold ${gayaDaun.teks}">
-                                                ${D.daunLabel}
-                                            </div>
-                                            <p class="text-sm text-slate-700 mt-1.5 leading-relaxed">
-                                                ${D.daunSaran}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <!-- BAGIAN 2: KONDISI KEBUN SAAT INI (SENSOR & PERALATAN) -->
-                            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-                                <div class="mb-4">
-                                    <h2 class="font-bold text-slate-900 text-base">Kondisi Lingkungan Kebun Saat Ini</h2>
-                                    <p class="text-xs text-slate-500">Pantauan otomatis suhu udara, kelembapan tanah, dan peralatan penyiraman</p>
-                                </div>
-
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                                            <i data-lucide="thermometer" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Suhu Udara</span>
-                                            <span class="text-lg font-extrabold text-slate-900">${D.suhu !== null ? D.suhu + ' °C' : '-- °C'}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
-                                            <i data-lucide="droplets" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Kelembapan Tanah</span>
-                                            <span class="text-lg font-extrabold text-slate-900">${D.kelembapanTanah !== null ? D.kelembapanTanah + ' %' : '-- %'}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg ${D.kipas === 'MENYALA' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
-                                            <i data-lucide="wind" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Kipas Pendingin</span>
-                                            <span class="text-base font-extrabold ${D.kipas === 'MENYALA' ? 'text-emerald-600' : 'text-slate-600'}">${D.kipas}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3.5">
-                                        <div class="w-10 h-10 rounded-lg ${D.pompa === 'MENYALA' ? 'bg-sky-100 text-sky-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
-                                            <i data-lucide="shower-head" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <span class="text-xs text-slate-500 block">Pompa Siram</span>
-                                            <span class="text-base font-extrabold ${D.pompa === 'MENYALA' ? 'text-sky-600' : 'text-slate-600'}">${D.pompa}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : `
-                            <!-- TAB 2: CATATAN RIWAYAT PEMERIKSAAN -->
-                            <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                                <div class="p-5 border-b border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                                    <div>
-                                        <h2 class="font-bold text-slate-900 text-base">Catatan Riwayat Pemeriksaan</h2>
-                                        <p class="text-xs text-slate-500">Daftar hasil pengecekan buah dan daun sebelumnya</p>
-                                    </div>
-                                    <button id="btn-unduh-csv" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer">
-                                        <i data-lucide="download" class="w-4 h-4"></i>
-                                        <span>Simpan Laporan (Excel/CSV)</span>
-                                    </button>
-                                </div>
-
-                                ${state.riwayat.length === 0 ? `
-                                    <div class="p-12 text-center space-y-2">
-                                        <p class="text-sm font-semibold text-slate-700">Belum Ada Catatan Riwayat</p>
-                                        <p class="text-xs text-slate-500">Lakukan pemeriksaan foto terlebih dahulu di menu Pemeriksaan Tanaman.</p>
-                                    </div>
-                                ` : `
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full text-left text-sm">
-                                            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500">
-                                                <tr>
-                                                    <th class="py-3 px-4">Foto</th>
-                                                    <th class="py-3 px-4">Waktu</th>
-                                                    <th class="py-3 px-4">Kondisi Buah</th>
-                                                    <th class="py-3 px-4">Kesehatan Daun</th>
-                                                    <th class="py-3 px-4">Sumber</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100">
-                                                ${state.riwayat.map(r => `
-                                                    <tr class="hover:bg-slate-50">
-                                                        <td class="py-3 px-4">
-                                                            ${r.fotoUrl ? `<img src="${r.fotoUrl}" class="w-12 h-12 rounded-lg object-cover border border-slate-200" />` : '-'}
-                                                        </td>
-                                                        <td class="py-3 px-4 text-slate-600 text-xs">${r.waktu}</td>
-                                                        <td class="py-3 px-4 font-semibold text-slate-900">
-                                                            ${r.buahLabel}
-                                                            ${r.buahPersen > 0 ? `<span class="text-xs font-normal text-slate-500">(${r.buahPersen}%)</span>` : ''}
-                                                        </td>
-                                                        <td class="py-3 px-4">
-                                                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${r.daunStatus === 'sehat' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}">
-                                                                ${r.daunLabel} ${r.daunPersen > 0 ? `(${r.daunPersen}%)` : ''}
-                                                            </span>
-                                                        </td>
-                                                        <td class="py-3 px-4 text-xs text-slate-500">${r.sumber}</td>
-                                                    </tr>
-                                                `).join('')}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                `}
-                            </div>
-                        `}
-                    </main>
-                `;
-
-          if (window.lucide) window.lucide.createIcons();
-          pasangEvent();
-        }
-
-        function pasangEvent() {
-          document.getElementById('tab-utama').onclick = () => { state.tab = 'utama'; render(); };
-          document.getElementById('tab-riwayat').onclick = () => { state.tab = 'riwayat'; render(); };
-
-          const btnTutup = document.getElementById('btn-tutup-pesan');
-          if (btnTutup) btnTutup.onclick = () => { state.notice = null; render(); };
-
-          const btnSegarkan = document.getElementById('btn-segarkan');
-          if (btnSegarkan) btnSegarkan.onclick = () => { ambilDataTerbaru(); tampilkanPesan('Data diperbarui.', 'info'); };
-
-          const btnKamera = document.getElementById('btn-kamera');
-          if (btnKamera) btnKamera.onclick = fotoDariKamera;
-
-          const inputSemua = document.getElementById('input-foto-semua');
-          const btnSemua = document.getElementById('btn-pilih-semua');
-          if (btnSemua && inputSemua) {
-            btnSemua.onclick = () => inputSemua.click();
-            inputSemua.onchange = (e) => {
-              if (e.target.files[0]) {
-                kirimFotoSemua(e.target.files[0]);
-                e.target.value = '';
-              }
-            };
-          }
-
-          const inputDaun = document.getElementById('input-foto-daun');
-          const btnDaun = document.getElementById('btn-pilih-daun');
-          if (btnDaun && inputDaun) {
-            btnDaun.onclick = () => inputDaun.click();
-            inputDaun.onchange = (e) => {
-              if (e.target.files[0]) {
-                kirimFotoDaunSaja(e.target.files[0]);
-                e.target.value = '';
-              }
-            };
-          }
-
-          const btnUnduh = document.getElementById('btn-unduh-csv');
-          if (btnUnduh) btnUnduh.onclick = unduhLaporan;
-        }
-
-        ambilDataTerbaru();
-        setInterval(ambilDataTerbaru, API.pollMs);
-        render();
-      })();
+      } catch (err) {
+        msg.className = "alert-box error";
+        msg.textContent = "Terjadi kesalahan jaringan saat menghubungi server.";
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = "Buat Akun User";
+      }
+    });
+
+    // Modal Delete Handlers
+    function openDeleteModal(id, nama) {
+      pendingDeleteId = id;
+      document.getElementById("deleteModalText").textContent =
+        `Akun "${nama}" akan dihapus permanen dari database dan tidak dapat login lagi.`;
+      document.getElementById("deleteModal").classList.add("open");
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      document.getElementById("deleteModal").classList.remove("open");
+    }
+
+    document.getElementById("confirmDeleteBtn").addEventListener("click", async () => {
+      if (!pendingDeleteId) return;
+      const id = pendingDeleteId;
+      closeDeleteModal();
+      await fetch(`/api/web/users/${id}`, { method: "DELETE" });
+      loadUsers();
+    });
+
+    loadUsers();
   </script>
 </body>
 

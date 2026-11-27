@@ -140,6 +140,7 @@ void updateLCD() {
 
 void setup() {
   Serial.begin(115200);
+<<<<<<< HEAD
   pinMode(PIN_PUMP, OUTPUT);
   pinMode(PIN_FAN, OUTPUT);
   setPump(false);
@@ -192,3 +193,53 @@ void loop() {
   }
 }
 
+=======
+  delay(1500);
+
+  initCamera();
+
+  Serial.println("\nMenghubungkan ke Wi-Fi...");
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  
+  if (strlen(password) > 0) {
+    WiFi.begin(ssid, password);
+  } else {
+    WiFi.begin(ssid);
+  }
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\n\nWIFI BERHASIL TERHUBUNG!");
+  Serial.print("IP ESP32 : ");
+  Serial.println(WiFi.localIP()); 
+
+  server.on("/capture", HTTP_GET, handleCapture);
+  server.begin();
+}
+
+// =====================================================
+// 6. LOOP
+// =====================================================
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    server.handleClient(); // Trigger Manual
+
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastCaptureTime >= timerInterval || lastCaptureTime == 0) {
+      lastCaptureTime = currentMillis;
+      sendPhoto(); // Trigger Otomatis
+    }
+  } else {
+    static unsigned long lastStatusTime = 0;
+    if (millis() - lastStatusTime >= 5000) {
+      lastStatusTime = millis();
+      Serial.println("Menunggu koneksi Wi-Fi...");
+    }
+  }
+  delay(10);
+}
+>>>>>>> origin/feat/roi-web

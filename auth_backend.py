@@ -10,9 +10,12 @@ from functools import wraps
 
 import jwt
 import mysql.connector
+from dotenv import load_dotenv
 from flask import Blueprint, current_app, g, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 OTP_TTL = timedelta(minutes=10)
@@ -35,18 +38,20 @@ def _db():
         host=_config("DB_HOST"),
         port=int(os.getenv("DB_PORT", "3306")),
         user=_config("DB_USER"),
-        password=_config("DB_PASSWORD"),
+        password=os.getenv("DB_PASSWORD", ""),  # <-- ubah baris ini
         database=_config("DB_NAME"),
     )
-    cursor = connection.cursor(dictionary=True)
+    cursor = None
     try:
+        cursor = connection.cursor(dictionary=True)
         yield connection, cursor
         connection.commit()
     except Exception:
         connection.rollback()
         raise
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
         connection.close()
 
 
@@ -265,11 +270,13 @@ def verify():
 @auth_bp.post("/kirim-ulang")
 def resend():
     email = _normal_email(_body().get("email"))
+    if not email:
+        return jsonify({"status": "success", "pesan": "Jika akun tersedia, kode telah dikirim."})
     try:
         with _db() as (connection, cursor):
             cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
             user = cursor.fetchone()
-            if user is None:
+            if user is None or user["is_verified"]:
                 return jsonify({"status": "success", "pesan": "Jika akun tersedia, kode telah dikirim."})
             code = _new_otp(connection, cursor, user["id"], "register")
         _send_otp(email, code, "register")
@@ -285,21 +292,31 @@ def resend():
 def login():
     data = _body()
     email = _normal_email(data.get("email"))
+    now = datetime.now()
+
     with _db() as (_, cursor):
         cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
         user = cursor.fetchone()
+
+    if user and user["terkunci_sampai"] and user["terkunci_sampai"] > now:
+        return jsonify({"status": "error", "error": "Akun dikunci sementara. Coba lagi nanti."}), 429
+
     if user is None or not check_password_hash(user["password_hash"], str(data.get("password") or "")):
         if user:
+            # Reset hitungan gagal jika masa kunci sebelumnya sudah lewat
+            prev_fails = 0 if (user["terkunci_sampai"] and user["terkunci_sampai"] <= now) else int(user["gagal_login"])
+            new_fails = prev_fails + 1
+            lock_until = (now + LOCK_TIME) if new_fails >= MAX_LOGIN_ATTEMPTS else None
             with _db() as (_, cursor):
                 cursor.execute(
-                    "UPDATE users SET gagal_login=gagal_login+1, terkunci_sampai=IF(gagal_login+1 >= %s, DATE_ADD(NOW(), INTERVAL 5 MINUTE), terkunci_sampai) WHERE id=%s",
-                    (MAX_LOGIN_ATTEMPTS, user["id"]),
+                    "UPDATE users SET gagal_login=%s, terkunci_sampai=%s WHERE id=%s",
+                    (new_fails, lock_until, user["id"]),
                 )
         return jsonify({"status": "error", "error": "Email atau password salah."}), 401
-    if user["terkunci_sampai"] and user["terkunci_sampai"] > datetime.now():
-        return jsonify({"status": "error", "error": "Akun dikunci sementara."}), 429
+
     if not user["is_verified"]:
         return jsonify({"status": "error", "kode_error": "belum_verifikasi", "error": "Email belum diverifikasi."}), 403
+
     with _db() as (_, cursor):
         cursor.execute("UPDATE users SET gagal_login=0, terkunci_sampai=NULL WHERE id=%s", (user["id"],))
     return jsonify({"status": "success", "token": _token(user), "user": _user_data(user)})
@@ -310,7 +327,8 @@ def forgot():
     try:
         phone = _normal_phone(_body().get("phone"))
     except ValueError:
-        phone = ""
+        return jsonify({"status": "success", "pesan": "Jika nomor terdaftar, kode reset telah dikirim."})
+
     try:
         with _db() as (connection, cursor):
             cursor.execute("SELECT * FROM users WHERE phone=%s", (phone,))

@@ -1,10 +1,18 @@
 import os
 import re
-import secrets
 import mysql.connector
 from dotenv import load_dotenv
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
-from werkzeug.security import generate_password_hash
+from flask import (
+    Blueprint,
+    current_app,
+    request,
+    jsonify,
+    render_template,
+    redirect,
+    url_for,
+    session,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from auth_backend import _db, _normal_email, _normal_phone, _password_error
 
@@ -42,19 +50,34 @@ def login_page():
         username_input = str(request.form.get("username") or "").strip()
         password_input = str(request.form.get("password") or "")
 
-        valid_user = os.getenv("ADMIN_USERNAME", "admin").strip()
-        valid_pass = os.getenv("ADMIN_PASSWORD", "adminstroberi")
+        try:
+            with _db() as (_, cursor):
+                cursor.execute(
+                    "SELECT nama, password_hash, is_verified FROM users "
+                    "WHERE nama=%s AND role=%s",
+                    (username_input, "admin"),
+                )
+                admin_users = cursor.fetchall()
+        except mysql.connector.Error:
+            current_app.logger.exception("Database login admin gagal")
+            error = "Database tidak tersedia. Silakan coba lagi."
+        else:
+            admin_user = next(
+                (
+                    user
+                    for user in admin_users
+                    if user["is_verified"]
+                    and check_password_hash(user["password_hash"], password_input)
+                ),
+                None,
+            )
+            if admin_user:
+                session.clear()
+                session["admin_logged_in"] = True
+                session["admin_username"] = admin_user["nama"]
+                return redirect(url_for("web.home"))
 
-        if (
-            secrets.compare_digest(username_input, valid_user)
-            and secrets.compare_digest(password_input, valid_pass)
-        ):
-            session.clear()
-            session["admin_logged_in"] = True
-            session["admin_username"] = valid_user
-            return redirect(url_for("web.home"))
-
-        error = "Username atau password admin salah."
+            error = "Username/password admin salah atau akun belum diverifikasi."
 
     return render_template("login.html", error=error, username=username_input)
 
@@ -121,9 +144,9 @@ def create_user():
                 return jsonify({"status": "error", "error": "Email atau nomor HP sudah terdaftar."}), 409
 
             cursor.execute(
-                "INSERT INTO users (nama, email, phone, password_hash, is_verified) "
-                "VALUES (%s, %s, %s, %s, 1)",
-                (nama, email, phone, hashed_password),
+                "INSERT INTO users (nama, email, phone, role, password_hash, is_verified) "
+                "VALUES (%s, %s, %s, %s, %s, 1)",
+                (nama, email, phone, "user", hashed_password),
             )
 
         return jsonify({

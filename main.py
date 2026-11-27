@@ -11,6 +11,11 @@ from state import BASE_DIR, latest_sensor, latest_result
 from auth_backend import auth_bp
 from ai_backend import create_ai_routes
 from parameter_backend import garden_bp
+from roi_backend import roi_bp
+from web_backend import web_bp
+from iot_sensor_backend import iot_bp
+from camera_backend import camera_bp
+from leaf_mobile_backend import leaf_mobile_bp
 
 # =====================================================
 # INISIALISASI FLASK, ENV, MYSQL & FIREBASE

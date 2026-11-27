@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lab Proses ROI & Kematangan Buah — Strawberry Care</title>
+    <title>Lab Proses ROI Buah & Daun — Strawberry Care</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
@@ -629,6 +629,116 @@
             object-fit: contain;
         }
 
+        .crop-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(10, 20, 15, 0.82);
+        }
+
+        .crop-modal.open {
+            display: flex;
+        }
+
+        .crop-dialog {
+            width: min(820px, 100%);
+            max-height: 94vh;
+            overflow: auto;
+            padding: 20px;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.3);
+        }
+
+        .crop-dialog h3 {
+            color: var(--green-dark);
+            margin-bottom: 5px;
+        }
+
+        .crop-dialog p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        .crop-stage-wrap {
+            display: flex;
+            justify-content: center;
+            overflow: auto;
+            max-height: 62vh;
+            padding: 4px;
+            background: #101c16;
+            border-radius: 12px;
+        }
+
+        .crop-stage {
+            position: relative;
+            flex: 0 0 auto;
+            line-height: 0;
+            touch-action: none;
+        }
+
+        #leafCropImage {
+            display: block;
+            max-width: min(76vw, 760px);
+            max-height: 60vh;
+            object-fit: contain;
+        }
+
+        .crop-selection {
+            position: absolute;
+            z-index: 1;
+            border: 2px solid #ffffff;
+            outline: 1px solid var(--green-primary);
+            box-shadow: 0 0 0 9999px rgba(5, 15, 10, 0.55);
+            cursor: move;
+            touch-action: none;
+        }
+
+        .crop-selection::after {
+            content: "Geser area crop";
+            position: absolute;
+            left: 50%;
+            bottom: 8px;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #ffffff;
+            font: 11px/1.2 "Plus Jakarta Sans", sans-serif;
+            white-space: nowrap;
+        }
+
+        .crop-size-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 14px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .crop-size-control input {
+            flex: 1;
+            accent-color: var(--green-primary);
+        }
+
+        .crop-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .crop-actions .btn {
+            width: auto;
+            min-width: 140px;
+            padding: 0 16px;
+        }
+
         @media (max-width: 980px) {
             .source-grid {
                 grid-template-columns: 1fr;
@@ -709,9 +819,9 @@
 
     <main class="container">
         <div class="page-header">
-            <h2>Lab Proses ROI & Klasifikasi Kematangan Buah</h2>
-            <p>Uji tahapan segmentasi warna HSV, operasi morfologi, deteksi Region of Interest (ROI), dan prediksi
-                MobileNetV2.</p>
+            <h2>Lab Proses ROI Buah & Daun</h2>
+            <p>Uji tahapan segmentasi HSV, operasi morfologi, deteksi Region of Interest (ROI), dan prediksi
+                MobileNetV2 untuk kematangan buah maupun penyakit daun.</p>
         </div>
 
         <!-- Input Sources -->
@@ -769,6 +879,23 @@
                         <circle cx="12" cy="13" r="4" />
                     </svg>
                     <span>Proses dari Foto ESP32 Terakhir</span>
+                </button>
+            </div>
+
+            <div class="card">
+                <span class="card-badge green">Deteksi Penyakit Daun</span>
+                <h3>Upload Foto Daun</h3>
+                <p class="sub">Pilih area daun secara manual, konfirmasi crop, lalu lihat tahapan ROI dan hasil
+                    klasifikasi penyakit.</p>
+                <input type="file" id="leafImageInput" accept="image/*" hidden />
+                <button type="button" id="btnLeafSelect" class="btn btn-green"
+                    onclick="document.getElementById('leafImageInput').click()">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16v16H4z" />
+                        <path d="m4 15 5-5 4 4 3-3 4 4" />
+                    </svg>
+                    <span>Pilih Gambar & Atur Crop Daun</span>
                 </button>
             </div>
         </section>
@@ -867,7 +994,106 @@
                 </article>
             </div>
         </section>
+
+        <section id="leafResultBox" class="result-section">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Metode Ekstraksi ROI Daun</div>
+                    <div class="metric-val" id="resLeafMethod">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Luas Kontur Daun</div>
+                    <div class="metric-val" id="resLeafArea">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Hasil Deteksi Penyakit</div>
+                    <div class="metric-val" id="resLeafClass">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Confidence Model Daun</div>
+                    <div class="metric-val" id="resLeafConf" style="color: var(--green-primary);">-</div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="leafConfBar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pipeline-header">
+                <h3>Pra-pemrosesan ROI & Klasifikasi Daun</h3>
+                <span>Model dan pra-pemrosesan mengikuti deteksi daun aplikasi mobile</span>
+            </div>
+
+            <div class="pipeline-grid">
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">1</span>
+                        <span class="stage-title">Crop Terkonfirmasi</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('leafImgOrig', '1. Crop Daun Terkonfirmasi')">
+                        <img id="leafImgOrig" alt="Crop daun terkonfirmasi" />
+                    </div>
+                    <div class="stage-foot">Area daun yang dipilih dan dikonfirmasi sebelum diproses.</div>
+                </article>
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">2</span>
+                        <span class="stage-title">Mask HSV + Morfologi</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('leafImgMask', '2. Mask HSV Daun')">
+                        <img id="leafImgMask" alt="Mask HSV daun" />
+                    </div>
+                    <div class="stage-foot">Segmentasi warna daun dan penghalusan kontur.</div>
+                </article>
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">3</span>
+                        <span class="stage-title">Deteksi Bounding Box</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('leafImgBbox', '3. Bounding Box Daun')">
+                        <img id="leafImgBbox" alt="Bounding box daun" />
+                    </div>
+                    <div class="stage-foot">
+                        <span class="legend-dot" style="background: #eab308;"></span>Kontur Daun &nbsp;
+                        <span class="legend-dot" style="background: #22c55e;"></span>Area ROI
+                    </div>
+                </article>
+                <article class="stage-card">
+                    <div class="stage-top">
+                        <span class="step-num">4</span>
+                        <span class="stage-title">Hasil Crop ROI</span>
+                    </div>
+                    <div class="img-frame" onclick="openLightbox('leafImgCrop', '4. Crop ROI Daun (Input MobileNetV2)')">
+                        <img id="leafImgCrop" alt="Hasil crop ROI daun" />
+                    </div>
+                    <div class="stage-foot">Potongan ROI yang menjadi input model MobileNetV2 penyakit daun.</div>
+                </article>
+            </div>
+        </section>
     </main>
+
+    <div class="crop-modal" id="leafCropModal" role="dialog" aria-modal="true"
+        aria-labelledby="leafCropTitle">
+        <div class="crop-dialog">
+            <h3 id="leafCropTitle">Pilih area gejala penyakit</h3>
+            <p>Geser kotak crop ke area daun, atur ukurannya, lalu konfirmasi untuk melanjutkan analisis.</p>
+            <div class="crop-stage-wrap">
+                <div class="crop-stage" id="leafCropStage">
+                    <img id="leafCropImage" alt="Pilih area daun untuk crop" />
+                    <div class="crop-selection" id="leafCropSelection"></div>
+                </div>
+            </div>
+            <label class="crop-size-control" for="leafCropSize">
+                Ukuran crop
+                <input type="range" id="leafCropSize" min="25" max="100" value="72" />
+            </label>
+            <div class="crop-actions">
+                <button type="button" class="btn btn-green" style="background:#75857c;"
+                    onclick="closeLeafCrop()">Batal</button>
+                <button type="button" class="btn btn-green" id="btnConfirmLeafCrop"
+                    onclick="confirmLeafCrop()">Konfirmasi Crop</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Lightbox Preview -->
     <div class="lightbox" id="lightboxModal" onclick="closeLightbox(event)">
@@ -886,6 +1112,19 @@
         const fileInput = document.getElementById("imageInput");
         const dropZone = document.getElementById("dropZone");
         const fileNameLabel = document.getElementById("fileNameLabel");
+        const leafImageInput = document.getElementById("leafImageInput");
+        const leafCropModal = document.getElementById("leafCropModal");
+        const leafCropImage = document.getElementById("leafCropImage");
+        const leafCropStage = document.getElementById("leafCropStage");
+        const leafCropSelection = document.getElementById("leafCropSelection");
+        const leafCropSizeInput = document.getElementById("leafCropSize");
+        let leafCropObjectUrl = null;
+        let cropX = 0;
+        let cropY = 0;
+        let cropSize = 0;
+        let cropDragging = false;
+        let cropDragOffsetX = 0;
+        let cropDragOffsetY = 0;
 
         dropZone.addEventListener("click", () => fileInput.click());
 
@@ -913,6 +1152,135 @@
             }
         });
 
+        leafImageInput.addEventListener("change", () => {
+            const file = leafImageInput.files[0];
+            leafImageInput.value = "";
+            if (!file) return;
+            if (file.type && !file.type.startsWith("image/")) {
+                showError("Pilih file gambar untuk crop daun.");
+                return;
+            }
+            hideError();
+            if (leafCropObjectUrl) URL.revokeObjectURL(leafCropObjectUrl);
+            leafCropObjectUrl = URL.createObjectURL(file);
+            leafCropModal.classList.add("open");
+            leafCropImage.onload = () => {
+                const width = leafCropImage.clientWidth;
+                const height = leafCropImage.clientHeight;
+                leafCropStage.style.width = width + "px";
+                leafCropStage.style.height = height + "px";
+                cropSize = Math.min(width, height) * 0.72;
+                cropX = (width - cropSize) / 2;
+                cropY = (height - cropSize) / 2;
+                leafCropSizeInput.value = "72";
+                renderLeafCropBox();
+            };
+            leafCropImage.onerror = () => {
+                closeLeafCrop();
+                showError("Gambar tidak dapat dibuka untuk crop.");
+            };
+            leafCropImage.src = leafCropObjectUrl;
+        });
+
+        function renderLeafCropBox() {
+            leafCropSelection.style.left = cropX + "px";
+            leafCropSelection.style.top = cropY + "px";
+            leafCropSelection.style.width = cropSize + "px";
+            leafCropSelection.style.height = cropSize + "px";
+        }
+
+        function closeLeafCrop() {
+            leafCropModal.classList.remove("open");
+            leafCropImage.onload = null;
+            leafCropImage.onerror = null;
+            leafCropImage.removeAttribute("src");
+            leafCropStage.style.width = "";
+            leafCropStage.style.height = "";
+            if (leafCropObjectUrl) {
+                URL.revokeObjectURL(leafCropObjectUrl);
+                leafCropObjectUrl = null;
+            }
+        }
+
+        leafCropSelection.addEventListener("pointerdown", (e) => {
+            cropDragging = true;
+            const box = leafCropSelection.getBoundingClientRect();
+            cropDragOffsetX = e.clientX - box.left;
+            cropDragOffsetY = e.clientY - box.top;
+            leafCropSelection.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        });
+
+        leafCropSelection.addEventListener("pointermove", (e) => {
+            if (!cropDragging) return;
+            const stage = leafCropStage.getBoundingClientRect();
+            cropX = Math.min(
+                Math.max(0, e.clientX - stage.left - cropDragOffsetX),
+                stage.width - cropSize
+            );
+            cropY = Math.min(
+                Math.max(0, e.clientY - stage.top - cropDragOffsetY),
+                stage.height - cropSize
+            );
+            renderLeafCropBox();
+        });
+
+        ["pointerup", "pointercancel", "lostpointercapture"].forEach((eventName) => {
+            leafCropSelection.addEventListener(eventName, () => {
+                cropDragging = false;
+            });
+        });
+
+        leafCropSizeInput.addEventListener("input", () => {
+            const stageWidth = leafCropStage.clientWidth;
+            const stageHeight = leafCropStage.clientHeight;
+            const previousSize = cropSize;
+            cropSize = Math.min(stageWidth, stageHeight) * Number(leafCropSizeInput.value) / 100;
+            cropX = Math.min(Math.max(0, cropX + (previousSize - cropSize) / 2), stageWidth - cropSize);
+            cropY = Math.min(Math.max(0, cropY + (previousSize - cropSize) / 2), stageHeight - cropSize);
+            renderLeafCropBox();
+        });
+
+        async function confirmLeafCrop() {
+            const confirmButton = document.getElementById("btnConfirmLeafCrop");
+            confirmButton.disabled = true;
+            try {
+                const imageRect = leafCropImage.getBoundingClientRect();
+                const scaleX = leafCropImage.naturalWidth / imageRect.width;
+                const scaleY = leafCropImage.naturalHeight / imageRect.height;
+                const sourceX = Math.round(cropX * scaleX);
+                const sourceY = Math.round(cropY * scaleY);
+                const sourceWidth = Math.max(1, Math.round(cropSize * scaleX));
+                const sourceHeight = Math.max(1, Math.round(cropSize * scaleY));
+                const outputSize = Math.min(640, sourceWidth);
+                const canvas = document.createElement("canvas");
+                canvas.width = outputSize;
+                canvas.height = outputSize;
+                const context = canvas.getContext("2d");
+                if (!context) throw new Error("Browser tidak dapat menyiapkan crop.");
+                context.drawImage(
+                    leafCropImage,
+                    sourceX,
+                    sourceY,
+                    sourceWidth,
+                    sourceHeight,
+                    0,
+                    0,
+                    outputSize,
+                    outputSize
+                );
+                const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+                if (!blob) throw new Error("Gagal membuat hasil crop.");
+                const croppedFile = new File([blob], "leaf-crop.jpg", { type: "image/jpeg" });
+                closeLeafCrop();
+                await runLeafRoi(croppedFile);
+            } catch (error) {
+                showError(error.message || "Crop gambar daun gagal.");
+            } finally {
+                confirmButton.disabled = false;
+            }
+        }
+
         function showError(message) {
             const box = document.getElementById("errorBox");
             box.textContent = message;
@@ -939,11 +1307,13 @@
 
             const btnUpload = document.getElementById("btnUpload");
             const btnEsp = document.getElementById("btnEsp");
+            const btnLeafSelect = document.getElementById("btnLeafSelect");
             const loader = document.getElementById("loaderBox");
             const resultBox = document.getElementById("resultBox");
 
             btnUpload.disabled = true;
             btnEsp.disabled = true;
+            btnLeafSelect.disabled = true;
             loader.style.display = "block";
             resultBox.classList.remove("visible");
 
@@ -991,6 +1361,63 @@
             } finally {
                 btnUpload.disabled = false;
                 btnEsp.disabled = false;
+                btnLeafSelect.disabled = false;
+                loader.style.display = "none";
+            }
+        }
+
+        async function runLeafRoi(croppedFile) {
+            hideError();
+            const formData = new FormData();
+            formData.append("file", croppedFile);
+
+            const btnUpload = document.getElementById("btnUpload");
+            const btnEsp = document.getElementById("btnEsp");
+            const btnLeafSelect = document.getElementById("btnLeafSelect");
+            const loader = document.getElementById("loaderBox");
+            const resultBox = document.getElementById("leafResultBox");
+            btnUpload.disabled = true;
+            btnEsp.disabled = true;
+            btnLeafSelect.disabled = true;
+            loader.style.display = "block";
+            resultBox.classList.remove("visible");
+
+            try {
+                const response = await fetch("/api/roi/leaf/process", {
+                    method: "POST",
+                    body: formData,
+                });
+                if (response.status === 401) {
+                    window.location.href = "/login";
+                    return;
+                }
+                const json = await response.json();
+                if (!response.ok) {
+                    showError(json.error || "Gagal memproses ROI penyakit daun.");
+                    return;
+                }
+
+                const data = json.data;
+                document.getElementById("resLeafMethod").textContent = data.method || "-";
+                document.getElementById("resLeafArea").textContent = (data.contour_area ?? 0) + " px";
+                document.getElementById("resLeafClass").textContent = data.penyakit_daun || "-";
+                const confidence = Number(data.confidence_percent ?? 0);
+                document.getElementById("resLeafConf").textContent = confidence + "%";
+                document.getElementById("leafConfBar").style.width =
+                    Math.min(Math.max(confidence, 0), 100) + "%";
+
+                document.getElementById("leafImgOrig").src = data.images.original;
+                document.getElementById("leafImgMask").src = data.images.mask;
+                document.getElementById("leafImgBbox").src = data.images.bbox;
+                document.getElementById("leafImgCrop").src = data.images.crop;
+                resultBox.classList.add("visible");
+                resultBox.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (error) {
+                showError("Gagal terhubung ke server Flask. Periksa koneksi jaringan Anda.");
+            } finally {
+                btnUpload.disabled = false;
+                btnEsp.disabled = false;
+                btnLeafSelect.disabled = false;
                 loader.style.display = "none";
             }
         }
